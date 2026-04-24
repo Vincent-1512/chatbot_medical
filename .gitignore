@@ -1,2 +1,8 @@
 .env
-.env
+__pycache__/
+*.pyc
+pgdata/
+vihealthqa_raw.csv
+knowledge_chunks.csv
+symptom_mapping.csv
+.DS_Store
