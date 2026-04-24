@@ -1,0 +1,8 @@
+streamlit
+psycopg2-binary
+numpy
+pandas
+sentence-transformers
+pgvector
+python-dotenv
+datasets

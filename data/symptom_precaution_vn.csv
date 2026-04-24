@@ -1,0 +1,42 @@
+Disease,Precaution_1,Precaution_2,Precaution_3,Precaution_4
+Drug Reaction,Ngừng tác nhân gây kích ứng,Đến ngay bệnh viện gần nhất,Ngừng sử dụng thuốc đang nghi ngờ,Theo dõi và tái khám
+Malaria,Đến ngay bệnh viện gần nhất,Tránh thức ăn nhiều dầu mỡ,Tránh ăn đồ sống/chưa chín,Ngủ màn chống muỗi
+Allergy,Thoa kem dịu da (Calamine),Che chắn vùng da bị tổn thương,,Chườm đá lạnh để giảm ngứa
+Hypothyroidism,Giảm căng thẳng,Tập thể dục đều đặn,Ăn uống lành mạnh,Ngủ đủ giấc
+Psoriasis,Rửa tay bằng nước ấm và xà phòng,Cầm máu bằng cách ấn chặt (nếu có tổn thương),Tham khảo ý kiến bác sĩ,Tắm nước muối pha loãng
+GERD,Tránh thức ăn nhiều dầu mỡ và cay nóng,Không nằm ngay sau khi ăn,Duy trì cân nặng hợp lý,Tập thể dục
+Chronic cholestasis,Tắm nước mát,Dùng thuốc chống ngứa theo đơn,Tham khảo ý kiến bác sĩ,Ăn uống lành mạnh
+hepatitis A,Đến ngay bệnh viện gần nhất,Rửa tay thật sạch thường xuyên,Tránh thức ăn nhiều dầu mỡ và cay nóng,Dùng thuốc theo chỉ định
+Osteoarthristis,Dùng thuốc giảm đau (Acetaminophen) theo chỉ định,Đến ngay bệnh viện gần nhất,Theo dõi và tái khám,Tắm nước ấm pha muối Epsom
+"(vertigo) Paroymsal  Positional Vertigo",Nằm nghỉ ngơi,Tránh thay đổi tư thế đột ngột,Tránh cử động đầu đột ngột,Thư giãn
+Hypoglycemia,Nằm nghiêng sang một bên,Kiểm tra mạch,Uống nước đường hoặc đồ ngọt,Tham khảo ý kiến bác sĩ
+Acne,Rửa mặt ngày hai lần,Tránh thức ăn nhiều dầu mỡ và cay nóng,Uống nhiều nước,Tránh lạm dụng mỹ phẩm
+Diabetes ,Ăn chế độ cân bằng dinh dưỡng,Tập thể dục,Tham khảo ý kiến bác sĩ,Theo dõi và tái khám
+Impetigo,Ngâm vùng tổn thương trong nước ấm,Dùng thuốc kháng sinh theo đơn,Làm sạch vảy bằng khăn ẩm,Tham khảo ý kiến bác sĩ
+Hypertension ,Ngồi thiền/Thư giãn,Tắm nước ấm pha muối,Giảm căng thẳng,Ngủ đủ giấc
+Peptic ulcer diseae,Tránh thức ăn nhiều dầu mỡ và cay nóng,Ăn thực phẩm chứa men vi sinh (Probiotic),Tạm ngưng dùng sữa bò,Hạn chế rượu bia
+Dimorphic hemmorhoids(piles),Tránh thức ăn nhiều dầu mỡ và cay nóng,Dùng chiết xuất cây phỉ (Witch hazel),Tắm ngồi nước ấm pha muối Epsom,Uống nước ép nha đam
+Common Cold,Uống nước giàu Vitamin C,Xông hơi mặt,Tránh đồ ăn thức uống lạnh,Theo dõi và hạ sốt kịp thời
+Chicken pox,Tắm bằng nước lá neem/trà xanh,Uống nhiều nước,Tiêm vắc xin phòng ngừa,Tránh đến nơi đông người
+Cervical spondylosis,Chườm nóng hoặc chườm lạnh,Tập thể dục nhẹ nhàng,Dùng thuốc giảm đau không kê đơn,Tham khảo ý kiến bác sĩ
+Hyperthyroidism,Ăn uống lành mạnh,Massage thư giãn,Sử dụng tía tô đất (Lemon balm),Cân nhắc điều trị I-ốt phóng xạ theo chỉ định
+Urinary tract infection,Uống nhiều nước,Tăng cường lượng Vitamin C,Uống nước ép nam việt quất,Sử dụng men vi sinh
+Varicose veins,Nằm thẳng và kê cao chân,Thoa kem hỗ trợ tĩnh mạch,Mang vớ y khoa,Không đứng yên một chỗ quá lâu
+AIDS,Băng kín các vết thương hở,Sử dụng đồ bảo hộ y tế nếu có thể,Tham khảo ý kiến chuyên gia,Theo dõi và điều trị ARV
+Paralysis (brain hemorrhage),Vật lý trị liệu/Massage,Ăn uống lành mạnh,Tập vận động phục hồi,Tuân thủ phác đồ của bác sĩ
+Typhoid,Ăn rau củ nấu chín mềm,Điều trị bằng kháng sinh theo đơn,Tham khảo ý kiến bác sĩ,Uống thuốc đúng giờ
+Hepatitis B,Đến ngay bệnh viện gần nhất,Tiêm vắc xin cho người nhà,Ăn uống lành mạnh,Dùng thuốc theo chỉ định
+Fungal infection,Tắm rửa sạch sẽ ngày hai lần,Sử dụng xà phòng diệt khuẩn/lá neem,Giữ vùng da bị nhiễm trùng luôn khô ráo,Mặc quần áo sạch và thoáng mát
+Hepatitis C,Đến ngay bệnh viện gần nhất,Kiểm tra sức khỏe định kỳ,Ăn uống lành mạnh,Dùng thuốc theo chỉ định
+Migraine,Ngồi thiền/Thư giãn,Giảm căng thẳng,Đeo kính râm khi ra nắng,Tham khảo ý kiến bác sĩ
+Bronchial Asthma,Mặc quần áo rộng rãi thoải mái,Hít thở sâu và chậm,Tránh xa các tác nhân gây dị ứng,Tìm kiếm sự trợ giúp y tế
+Alcoholic hepatitis,Ngừng uống rượu bia ngay lập tức,Tham khảo ý kiến bác sĩ,Dùng thuốc theo chỉ định,Theo dõi và tái khám
+Jaundice,Uống nhiều nước,Sử dụng thảo dược bổ gan (Milk thistle),Ăn nhiều trái cây và thực phẩm giàu chất xơ,Dùng thuốc theo chỉ định
+Hepatitis E,Ngừng uống rượu bia,Nghỉ ngơi hoàn toàn,Tham khảo ý kiến bác sĩ,Dùng thuốc theo chỉ định
+Dengue,Uống nước ép lá đu đủ,Tránh thức ăn nhiều dầu mỡ và cay nóng,Phòng tránh muỗi đốt,Bổ sung nhiều nước và điện giải
+Hepatitis D,Tham khảo ý kiến bác sĩ,Dùng thuốc theo chỉ định,Ăn uống lành mạnh,Theo dõi và tái khám
+Heart attack,Gọi cấp cứu ngay lập tức,Nhai hoặc nuốt Aspirin (nếu không dị ứng),Giữ bình tĩnh và ngồi nghỉ ngơi,
+Pneumonia,Tham khảo ý kiến bác sĩ,Điều trị bằng kháng sinh theo đơn,Nghỉ ngơi hoàn toàn,Theo dõi và tái khám
+Arthritis,Tập thể dục nhẹ nhàng,Chườm nóng và chườm lạnh luân phiên,Thử nghiệm châm cứu,Massage giảm đau
+Gastroenteritis,Ngừng ăn thức ăn đặc một thời gian,Uống từng ngụm nước nhỏ thường xuyên,Nghỉ ngơi,Bắt đầu ăn lại từ từ với thức ăn mềm
+Tuberculosis,Đeo khẩu trang che miệng,Tuân thủ phác đồ điều trị của bác sĩ,Uống thuốc đúng giờ và đủ liều,Nghỉ ngơi đầy đủ

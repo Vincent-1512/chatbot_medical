@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  db:
+    # Dùng image PostgreSQL đã được tích hợp sẵn pgvector
+    image: pgvector/pgvector:pg16
+    container_name: triage_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: triage_bot
+    ports:
+      - "5433:5432"
+    volumes:
+      # Lưu trữ dữ liệu để không bị mất khi tắt Docker
+      - ./pgdata:/var/lib/postgresql/data
+      # Tự động chạy file SQL này khi khởi tạo lần đầu
+      - ./schema.sql:/docker-entrypoint-initdb.d/1-schema.sql

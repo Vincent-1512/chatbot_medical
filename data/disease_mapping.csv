@@ -1,0 +1,42 @@
+﻿English_Name,Vietnamese_Name,Specialty_Code
+Fungal infection,Nhiễm nấm,DERMA
+Allergy,Dị ứng,IMMUNO
+GERD,Trào ngược dạ dày thực quản,GASTRO
+Chronic cholestasis,Tắc mật mãn tính,HEPAT
+Drug Reaction,Phản ứng thuốc,IMMUNO
+Peptic ulcer diseae,Viêm loét dạ dày tá tràng,GASTRO
+AIDS,Hội chứng suy giảm miễn dịch,INFECT
+Diabetes,Tiểu đường,ENDOC
+Gastroenteritis,Viêm dạ dày ruột,GASTRO
+Bronchial Asthma,Hen phế quản,RESP
+Hypertension,Tăng huyết áp,CARDIO
+Migraine,Đau nửa đầu,NEURO
+Cervical spondylosis,Thoái hóa đốt sống cổ,ORTHO
+Paralysis (brain hemorrhage),Liệt do xuất huyết não,NEURO
+Jaundice,Vàng da,HEPAT
+Malaria,Sốt rét,INFECT
+Chicken pox,Thủy đậu,INFECT
+Dengue,Sốt xuất huyết,INFECT
+Typhoid,Thương hàn,INFECT
+hepatitis A,Viêm gan A,HEPAT
+Hepatitis B,Viêm gan B,HEPAT
+Hepatitis C,Viêm gan C,HEPAT
+Hepatitis D,Viêm gan D,HEPAT
+Hepatitis E,Viêm gan E,HEPAT
+Alcoholic hepatitis,Viêm gan do rượu,HEPAT
+Tuberculosis,Lao phổi,RESP
+Common Cold,Cảm lạnh thông thường,RESP
+Pneumonia,Viêm phổi,RESP
+Dimorphic hemmorhoids(piles),Bệnh trĩ,GASTRO
+Heart attack,Nhồi máu cơ tim,CARDIO
+Varicose veins,Suy giãn tĩnh mạch,CARDIO
+Hypothyroidism,Suy giáp,ENDOC
+Hyperthyroidism,Cường giáp,ENDOC
+Hypoglycemia,Hạ đường huyết,ENDOC
+Osteoarthristis,Thoái hóa khớp,ORTHO
+Arthritis,Viêm khớp,ORTHO
+(vertigo) Paroymsal  Positional Vertigo,Chóng mặt kịch phát lành tính,NEURO
+Acne,Mụn trứng cá,DERMA
+Urinary tract infection,Nhiễm trùng tiết niệu,UROLO
+Psoriasis,Vảy nến,DERMA
+Impetigo,Chốc lở,DERMA
