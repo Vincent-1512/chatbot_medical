@@ -17,3 +17,18 @@ services:
       - ./pgdata:/var/lib/postgresql/data
       # Tự động chạy file SQL này khi khởi tạo lần đầu
       - ./schema.sql:/docker-entrypoint-initdb.d/1-schema.sql
+
+  web:
+    build: .
+    container_name: triage_web
+    restart: always
+    ports:
+      - "8501:8501"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=triage_bot
+      - DB_USER=admin
+      - DB_PASS=123
+    depends_on:
+      - db
