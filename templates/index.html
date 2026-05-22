@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Phòng Khám Đa Khoa AI — Hệ thống sàng lọc triệu chứng thông minh, tư vấn chuyên khoa bằng AI">
+    <title>Phòng Khám Đa Khoa — Tư Vấn AI</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>">
+</head>
+<body>
+
+<!-- ════════════════════════════════════════
+     NAVIGATION BAR
+     ════════════════════════════════════════ -->
+<nav class="navbar" id="navbar">
+    <div class="container">
+        <a href="#" class="nav-brand" onclick="showPage('landing')">
+            <div class="logo-icon">🏥</div>
+            <span>PhòngKhám<span style="color:var(--secondary)">AI</span></span>
+        </a>
+
+        <!-- Guest nav -->
+        <div class="nav-links" id="nav-guest">
+            <a href="#features">Dịch vụ</a>
+            <a href="#specialties">Chuyên khoa</a>
+            <button class="btn-login" onclick="openAuthModal('login')">Đăng nhập</button>
+            <button class="btn-register" onclick="openAuthModal('register')">Đăng ký</button>
+        </div>
+
+        <!-- Logged-in nav -->
+        <div class="nav-user hidden" id="nav-user">
+            <button class="nav-links" style="background:none;" onclick="showPage('dashboard')">📋 Dashboard</button>
+            <button class="nav-links" style="background:none;" onclick="showPage('profile')">👤 Hồ sơ</button>
+            <button class="nav-links" style="background:none;" onclick="showPage('history')">📜 Lịch sử</button>
+            <div class="user-avatar" id="user-avatar">?</div>
+            <span class="user-name" id="user-name-display"></span>
+            <button class="btn-logout" onclick="doLogout()">Đăng xuất</button>
+        </div>
+
+        <!-- Doctor nav -->
+        <div class="nav-user hidden" id="nav-doctor">
+            <button class="nav-links" style="background:none;" onclick="showPage('doctor-queue')">📋 Ca chờ khám</button>
+            <div class="user-avatar" id="doc-avatar">BS</div>
+            <span class="user-name" id="doc-name-display"></span>
+            <button class="btn-logout" onclick="doLogout()">Đăng xuất</button>
+        </div>
+
+        <!-- Admin nav -->
+        <div class="nav-user hidden" id="nav-admin">
+            <button class="nav-links" style="background:none;" onclick="showPage('admin-dashboard')">📊 Thống kê</button>
+            <button class="nav-links" style="background:none;" onclick="showPage('admin-knowledge')">🧠 Tri thức</button>
+            <div class="user-avatar" id="admin-avatar">A</div>
+            <span class="user-name" id="admin-name-display"></span>
+            <button class="btn-logout" onclick="doLogout()">Đăng xuất</button>
+        </div>
+    </div>
+</nav>
+
+<!-- ════════════════════════════════════════
+     AUTH MODAL
+     ════════════════════════════════════════ -->
+<div class="modal-overlay" id="auth-modal">
+    <div class="modal" style="position:relative;">
+        <button class="modal-close" onclick="closeAuthModal()">✕</button>
+        <h2 id="auth-title">Đăng nhập</h2>
+        <p class="modal-subtitle" id="auth-subtitle">Chào mừng bạn đến với Phòng Khám AI</p>
+
+        <div class="tabs" id="auth-tabs">
+            <button class="active" onclick="switchAuthTab('login')">Đăng nhập</button>
+            <button onclick="switchAuthTab('register')">Đăng ký</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="login-form" onsubmit="return doLogin(event)">
+            <div class="form-group">
+                <label>Loại tài khoản</label>
+                <select id="login-type">
+                    <option value="patient">Bệnh nhân</option>
+                    <option value="staff">Bác sĩ / Nhân viên</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label id="login-user-label">Số điện thoại</label>
+                <input type="text" id="login-username" placeholder="Nhập SĐT hoặc username" required>
+            </div>
+            <div class="form-group">
+                <label>Mật khẩu</label>
+                <input type="password" id="login-password" placeholder="Nhập mật khẩu" required>
+            </div>
+            <div class="form-error" id="login-error"></div>
+            <button type="submit" class="form-submit">Đăng nhập</button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="register-form" class="hidden" onsubmit="return doRegister(event)">
+            <div class="form-group">
+                <label>Họ và tên</label>
+                <input type="text" id="reg-name" placeholder="Nguyễn Văn A" required>
+            </div>
+            <div class="form-group">
+                <label>Số điện thoại</label>
+                <input type="tel" id="reg-phone" placeholder="0901234567" required>
+            </div>
+            <div class="form-group">
+                <label>Giới tính</label>
+                <select id="reg-gender">
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                    <option value="Khác">Khác</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Mật khẩu</label>
+                <input type="password" id="reg-password" placeholder="Tối thiểu 6 ký tự" required minlength="6">
+            </div>
+            <div class="form-error" id="register-error"></div>
+            <button type="submit" class="form-submit">Đăng ký</button>
+        </form>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PAGE: LANDING
+     ════════════════════════════════════════ -->
+<main id="page-landing">
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1>Sàng lọc triệu chứng<br><span class="gradient-text">thông minh bằng AI</span></h1>
+                    <p>Hệ chuyên gia AI phân tích triệu chứng, gợi ý chuyên khoa phù hợp — nhanh chóng, chính xác, hoạt động 24/7.</p>
+                    <div class="hero-actions">
+                        <button class="btn btn-primary" onclick="openChatbot()">💬 Tư vấn AI ngay</button>
+                        <a href="#features" class="btn btn-outline">Tìm hiểu thêm</a>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="hero-card">
+                        <div class="card-header">
+                            <div class="icon-circle">🤖</div>
+                            <div>
+                                <h3>Trợ lý AI Sàng lọc</h3>
+                                <span>Đang hoạt động</span>
+                            </div>
+                        </div>
+                        <div class="demo-chat-line bot">
+                            <div class="bubble">Xin chào! Bạn đang gặp triệu chứng gì?</div>
+                        </div>
+                        <div class="demo-chat-line user">
+                            <div class="bubble">Tôi bị đau đầu và buồn nôn</div>
+                        </div>
+                        <div class="demo-chat-line bot">
+                            <div class="bubble">Tôi đã ghi nhận. Bạn có bị sốt không?</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features" id="features">
+        <div class="container">
+            <h2 class="section-title">Hệ thống tư vấn y tế thông minh</h2>
+            <p class="section-subtitle">Kết hợp công nghệ NLP, Hệ chuyên gia và RAG để mang đến trải nghiệm chẩn đoán ban đầu chính xác nhất</p>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="icon blue">🧠</div>
+                    <h3>NLP Tiếng Việt</h3>
+                    <p>Nhận diện triệu chứng từ ngôn ngữ tự nhiên. Bạn chỉ cần mô tả bình thường, AI sẽ hiểu.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon green">🔬</div>
+                    <h3>Hệ Chuyên Gia</h3>
+                    <p>Động cơ suy diễn dựa trên tập luật y khoa — trọng số, luật bắt buộc, luật loại trừ.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon amber">💬</div>
+                    <h3>Hội thoại thông minh</h3>
+                    <p>Chatbot hỏi thêm các triệu chứng liên quan để tăng độ chính xác, giống y tá phân luồng thật.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon red">🚨</div>
+                    <h3>Phát hiện khẩn cấp</h3>
+                    <p>Tự động nhận diện dấu hiệu cờ đỏ (Red Flag) và cảnh báo bệnh nhân ngay lập tức.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon purple">📋</div>
+                    <h3>Phiếu sàng lọc</h3>
+                    <p>Tự động tạo phiếu tóm tắt triệu chứng kèm gợi ý chuyên khoa gửi cho bác sĩ.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon teal">🔄</div>
+                    <h3>Feedback Loop</h3>
+                    <p>Bác sĩ xác nhận kết quả AI đúng/sai — giúp hệ thống học hỏi và cải thiện liên tục.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Specialties -->
+    <section class="specialties-section" id="specialties">
+        <div class="container">
+            <h2 class="section-title">Chuyên khoa phòng khám</h2>
+            <p class="section-subtitle">Hệ thống AI sẽ gợi ý chuyên khoa phù hợp nhất dựa trên triệu chứng của bạn</p>
+            <div class="specialties-grid" id="specialties-list">
+                <!-- Filled by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div>
+                <h4>🏥 Phòng Khám Đa Khoa AI</h4>
+                <p>Ứng dụng Hệ chuyên gia trong sàng lọc<br>triệu chứng và gợi ý chuyên khoa.</p>
+            </div>
+            <div>
+                <h4>Liên hệ</h4>
+                <p>📍 TP. Hồ Chí Minh<br>📞 1900-xxxx<br>✉️ contact@phongkham.ai</p>
+            </div>
+            <div>
+                <h4>Lưu ý</h4>
+                <p>Kết quả sàng lọc chỉ mang tính<br>tham khảo, không thay thế<br>chẩn đoán y khoa chính thức.</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 Phòng Khám AI — Đồ án thực tập</p>
+        </div>
+    </footer>
+</main>
+
+<!-- ════════════════════════════════════════
+     PAGE: PATIENT DASHBOARD
+     ════════════════════════════════════════ -->
+<div id="page-dashboard" class="dashboard container hidden">
+    <div class="dashboard-header">
+        <h1>👋 Xin chào, <span id="dash-name"></span></h1>
+        <p>Chào mừng bạn đến với hệ thống tư vấn y tế AI</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(26,86,219,0.1);">💬</div>
+            <div class="stat-value" id="dash-total-sessions">0</div>
+            <div class="stat-label">Phiên tư vấn</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(5,150,105,0.1);">✅</div>
+            <div class="stat-value" id="dash-completed">0</div>
+            <div class="stat-label">Hoàn thành</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer;" onclick="openChatbot()">
+            <div class="stat-icon" style="background:rgba(217,119,6,0.1);">🤖</div>
+            <div class="stat-value" style="font-size:1.2rem;color:var(--primary);">Bắt đầu ngay</div>
+            <div class="stat-label">Tư vấn AI mới</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>📜 Phiên tư vấn gần đây</h3>
+        </div>
+        <div class="card-body">
+            <div class="session-list" id="dash-sessions">
+                <p style="color:var(--text-muted);text-align:center;padding:20px;">Chưa có phiên tư vấn nào</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PAGE: PATIENT PROFILE
+     ════════════════════════════════════════ -->
+<div id="page-profile" class="dashboard container hidden">
+    <div class="dashboard-header">
+        <h1>👤 Hồ sơ y tế</h1>
+        <p>Thông tin cá nhân và tiền sử bệnh lý</p>
+    </div>
+
+    <div class="profile-grid">
+        <div class="card">
+            <div class="card-header"><h3>Thông tin cá nhân</h3></div>
+            <div class="card-body">
+                <div class="form-group"><label>Họ và tên</label><input type="text" id="prof-name" readonly style="background:#f1f5f9"></div>
+                <div class="form-group"><label>Số điện thoại</label><input type="text" id="prof-phone" readonly style="background:#f1f5f9"></div>
+                <div class="form-group"><label>Giới tính</label><input type="text" id="prof-gender" readonly style="background:#f1f5f9"></div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h3>Tiền sử bệnh lý</h3></div>
+            <div class="card-body">
+                <form onsubmit="return saveProfile(event)">
+                    <div class="form-group"><label>Chiều cao (cm)</label><input type="number" id="prof-height" step="0.1"></div>
+                    <div class="form-group"><label>Cân nặng (kg)</label><input type="number" id="prof-weight" step="0.1"></div>
+                    <div class="form-group"><label>Nhóm máu</label>
+                        <select id="prof-blood"><option value="">-- Chọn --</option><option>A</option><option>B</option><option>AB</option><option>O</option></select>
+                    </div>
+                    <div class="form-group"><label>Tiền sử dị ứng</label><textarea id="prof-allergies" rows="2" placeholder="VD: Dị ứng penicillin"></textarea></div>
+                    <div class="form-group"><label>Bệnh nền</label><textarea id="prof-conditions" rows="2" placeholder="VD: Tiểu đường, tăng huyết áp"></textarea></div>
+                    <button type="submit" class="form-submit">💾 Lưu thay đổi</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PAGE: HISTORY
+     ════════════════════════════════════════ -->
+<div id="page-history" class="dashboard container hidden">
+    <div class="dashboard-header">
+        <h1>📜 Lịch sử tư vấn</h1>
+        <p>Xem lại các phiên tư vấn trước đây</p>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="session-list" id="history-list">
+                <p style="color:var(--text-muted);text-align:center;padding:20px;">Đang tải...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PAGE: HISTORY DETAIL (read-only chat replay)
+     ════════════════════════════════════════ -->
+<div id="page-history-detail" class="dashboard container hidden">
+    <div class="dashboard-header">
+        <button class="btn btn-outline" onclick="showPage('history')" style="margin-bottom:16px;">← Quay lại</button>
+        <h1>Chi tiết phiên #<span id="detail-session-id"></span></h1>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3>💬 Lịch sử hội thoại</h3></div>
+        <div class="card-body">
+            <div class="chat-history-view" id="detail-messages"></div>
+        </div>
+    </div>
+    <div class="card" style="margin-top:20px;">
+        <div class="card-header"><h3>📋 Kết quả sàng lọc</h3></div>
+        <div class="card-body" id="detail-recommendation" style="white-space:pre-wrap;"></div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PAGE: DOCTOR QUEUE
+     ════════════════════════════════════════ -->
+<div id="page-doctor-queue" class="dashboard container hidden">
+    <div class="dashboard-header">
+        <h1>🩺 Danh sách ca chờ khám</h1>
+        <p>Các bệnh nhân đã được AI phân luồng về khoa của bạn</p>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <table class="data-table" id="doctor-queue-table">
+                <thead>
+                    <tr>
+                        <th>Mã phiên</th>
+                        <th>Bệnh nhân</th>
+                        <th>Chuyên khoa</th>
+                        <th>Mức độ</th>
+                        <th>Thời gian</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="doctor-queue-body">
+                    <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:40px;">Đang tải...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PAGE: DOCTOR SESSION DETAIL
+     ════════════════════════════════════════ -->
+<div id="page-doctor-detail" class="dashboard container hidden">
+    <div class="dashboard-header">
+        <button class="btn btn-outline" onclick="showPage('doctor-queue')" style="margin-bottom:16px;">← Quay lại</button>
+        <h1>Chi tiết ca bệnh #<span id="doc-detail-id"></span></h1>
+    </div>
+    <div class="detail-grid">
+        <div>
+            <div class="card">
+                <div class="card-header"><h3>👤 Thông tin bệnh nhân</h3></div>
+                <div class="card-body" id="doc-patient-info"></div>
+            </div>
+            <div class="card" style="margin-top:20px;">
+                <div class="card-header"><h3>🔬 Kết quả AI</h3></div>
+                <div class="card-body">
+                    <div id="doc-diseases"></div>
+                    <div id="doc-recommendation" style="margin-top:16px;white-space:pre-wrap;background:#f8fafc;padding:16px;border-radius:8px;font-size:0.9rem;"></div>
+                </div>
+            </div>
+            <div class="card" style="margin-top:20px;">
+                <div class="card-header"><h3>✅ Xác nhận bác sĩ</h3></div>
+                <div class="card-body">
+                    <p style="margin-bottom:12px;">Kết quả AI có chính xác không?</p>
+                    <div class="verify-actions">
+                        <button class="btn btn-success" onclick="verifyAI(true)">✓ AI đúng</button>
+                        <button class="btn btn-danger" onclick="verifyAI(false)">✗ AI sai</button>
+                    </div>
+                    <div id="verify-correction" class="hidden" style="margin-top:16px;">
+                        <div class="form-group">
+                            <label>Chọn bệnh lý thực tế:</label>
+                            <select id="actual-disease"></select>
+                        </div>
+                        <button class="btn btn-primary" onclick="submitCorrection()" style="margin-top:8px;">Gửi đánh giá</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div>
+            <div class="card">
+                <div class="card-header"><h3>💬 Lịch sử chat</h3></div>
+                <div class="card-body">
+                    <div class="chat-history-view" id="doc-chat-history"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PAGE: ADMIN DASHBOARD
+     ════════════════════════════════════════ -->
+<div id="page-admin-dashboard" class="dashboard container hidden">
+    <div class="dashboard-header">
+        <h1>📊 Bảng điều khiển Quản trị</h1>
+    </div>
+    <div class="stats-grid" id="admin-stats-grid"></div>
+    <div class="card">
+        <div class="card-header"><h3>Phân bố chuyên khoa</h3></div>
+        <div class="card-body" id="admin-specialty-chart"></div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PAGE: ADMIN KNOWLEDGE
+     ════════════════════════════════════════ -->
+<div id="page-admin-knowledge" class="dashboard container hidden">
+    <div class="dashboard-header">
+        <h1>🧠 Quản trị Tri thức Y khoa</h1>
+    </div>
+    <div class="stats-grid">
+        <div class="card" style="cursor:pointer;" onclick="showAdminTab('specialties')">
+            <div class="card-body text-center"><div style="font-size:2rem;">🏥</div><h3>Chuyên khoa</h3></div>
+        </div>
+        <div class="card" style="cursor:pointer;" onclick="showAdminTab('symptoms')">
+            <div class="card-body text-center"><div style="font-size:2rem;">🩺</div><h3>Triệu chứng</h3></div>
+        </div>
+        <div class="card" style="cursor:pointer;" onclick="showAdminTab('diseases')">
+            <div class="card-body text-center"><div style="font-size:2rem;">🦠</div><h3>Bệnh lý</h3></div>
+        </div>
+    </div>
+    <div class="card" style="margin-top:20px;">
+        <div class="card-header"><h3 id="admin-tab-title">Chọn danh mục để xem</h3></div>
+        <div class="card-body">
+            <table class="data-table">
+                <thead id="admin-table-head"></thead>
+                <tbody id="admin-table-body">
+                    <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:40px;">Chọn danh mục phía trên</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     CHATBOT WIDGET
+     ════════════════════════════════════════ -->
+
+<!-- Floating button -->
+<button class="chat-fab" id="chat-fab" onclick="openChatbot()" title="Tư vấn AI">💬</button>
+
+<!-- Chat window -->
+<div class="chat-widget" id="chat-widget">
+    <div class="chat-header">
+        <div class="chat-header-info">
+            <div class="avatar">🤖</div>
+            <div>
+                <h4>Trợ lý AI Sàng lọc</h4>
+                <span>Đang hoạt động</span>
+            </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+            <button class="chat-close" onclick="startNewChat()" title="Phiên mới">🔄</button>
+            <button class="chat-close" onclick="closeChatbot()" title="Đóng">✕</button>
+        </div>
+    </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-input-area">
+        <input type="text" id="chat-input" placeholder="Mô tả triệu chứng của bạn..." autocomplete="off">
+        <button class="chat-send-btn" id="chat-send" onclick="sendChatMessage()">➤</button>
+    </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>
