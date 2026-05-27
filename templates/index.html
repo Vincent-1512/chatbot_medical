@@ -82,7 +82,7 @@
             </div>
             <div class="form-group">
                 <label id="login-user-label">Số điện thoại</label>
-                <input type="text" id="login-username" placeholder="Nhập SĐT hoặc username" required>
+                <input type="text" id="login-username" placeholder="Nhập số điện thoại đã đăng ký" required>
             </div>
             <div class="form-group">
                 <label>Mật khẩu</label>
@@ -455,9 +455,15 @@
         <div class="card" style="cursor:pointer;" onclick="showAdminTab('diseases')">
             <div class="card-body text-center"><div style="font-size:2rem;">🦠</div><h3>Bệnh lý</h3></div>
         </div>
+        <div class="card" style="cursor:pointer; background: #e0f2fe; border-color: var(--primary);" onclick="showAdminTab('sandbox')">
+            <div class="card-body text-center"><div style="font-size:2rem;">🤖</div><h3 style="color:var(--primary);">Sandbox AI</h3></div>
+        </div>
     </div>
-    <div class="card" style="margin-top:20px;">
-        <div class="card-header"><h3 id="admin-tab-title">Chọn danh mục để xem</h3></div>
+    <div class="card" style="margin-top:20px;" id="admin-table-card">
+        <div class="card-header">
+            <h3 id="admin-tab-title">Chọn danh mục để xem</h3>
+            <button class="btn btn-primary hidden" id="btn-add-new" onclick="openCrudModal()">+ Thêm mới</button>
+        </div>
         <div class="card-body">
             <table class="data-table">
                 <thead id="admin-table-head"></thead>
@@ -465,6 +471,75 @@
                     <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:40px;">Chọn danh mục phía trên</td></tr>
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- Sandbox Chat Container (hidden by default) -->
+    <div class="card hidden" style="margin-top:20px; border: 2px solid var(--primary);" id="sandbox-card">
+        <div class="card-header" style="background: #e0f2fe;">
+            <h3>🤖 Sandbox AI: Môi trường kiểm thử Rules Engine</h3>
+            <button class="btn btn-primary" onclick="startSandbox()">🔄 Restart Phiên</button>
+        </div>
+        <div class="card-body" style="padding: 0; display:flex; flex-direction:column; height: 500px;">
+            <div id="sandbox-messages" style="flex:1; overflow-y:auto; padding: 20px; background: #f8fafc; max-height: 400px; display:flex; flex-direction:column; gap:12px;"></div>
+            <div class="chat-input-area" style="border-top: 1px solid var(--border);">
+                <input type="text" id="sandbox-input" placeholder="Nhập triệu chứng kiểm thử..." onkeypress="if(event.key==='Enter') sendSandboxMessage()">
+                <button class="chat-send-btn" id="sandbox-send" onclick="sendSandboxMessage()">➤</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     ADMIN CRUD MODALS
+     ════════════════════════════════════════ -->
+<div class="modal-overlay" id="crud-modal">
+    <div class="modal" style="max-width: 500px;">
+        <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+            <h2 id="crud-modal-title" style="font-size: 1.3rem;">Thêm mới</h2>
+            <button class="close-btn" onclick="closeCrudModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        <div class="modal-body" id="crud-modal-body">
+            <!-- Form content will be injected here dynamically based on current tab -->
+        </div>
+        <div class="modal-footer" style="margin-top: 24px; display:flex; justify-content:flex-end; gap: 12px;">
+            <button class="btn btn-outline" onclick="closeCrudModal()">Hủy</button>
+            <button class="btn btn-primary" onclick="saveCrudData()">Lưu lại</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="rules-modal">
+    <div class="modal" style="max-width: 700px; width: 95%;">
+        <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+            <h2 style="font-size: 1.3rem;">Cấu hình Luật chẩn đoán - <span id="rules-disease-name" style="color:var(--primary)"></span></h2>
+            <button class="close-btn" onclick="closeRulesModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="display:flex; gap: 12px; margin-bottom: 16px;">
+                <select id="rule-symptom-select" class="form-group" style="flex:1; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                    <option value="">-- Chọn triệu chứng --</option>
+                </select>
+                <button class="btn btn-outline" onclick="addRuleRow()">+ Thêm</button>
+            </div>
+            <div style="max-height: 400px; overflow-y: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Triệu chứng</th>
+                            <th>Trọng số (1-10)</th>
+                            <th>Bắt buộc</th>
+                            <th>Loại trừ</th>
+                            <th>Xóa</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rules-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="modal-footer" style="margin-top: 24px; display:flex; justify-content:flex-end; gap: 12px;">
+            <button class="btn btn-outline" onclick="closeRulesModal()">Hủy</button>
+            <button class="btn btn-primary" onclick="saveRulesData()">Lưu cấu hình</button>
         </div>
     </div>
 </div>

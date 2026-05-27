@@ -484,8 +484,41 @@ def list_specialties():
         conn.close()
         return jsonify({"specialties": [dict(r) for r in rows]})
     except Exception as e:
-        print(f"Lỗi hệ thống: {e}")
         return jsonify({"error": "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau."}), 500
+
+@app.route('/api/admin/specialties', methods=['POST'])
+def add_specialty():
+    if session.get('user_type') not in ('admin', 'knowledge_admin'): return jsonify({"error": "Forbidden"}), 403
+    data = request.json
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO Specialties (code, name, description) VALUES (%s, %s, %s) RETURNING id",
+                        (data['code'], data['name'], data.get('description', '')))
+            new_id = cur.fetchone()[0]
+        conn.commit()
+        conn.close()
+        return jsonify({"message": "OK", "id": new_id}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/specialties/<int:sid>', methods=['PUT', 'DELETE'])
+def edit_specialty(sid):
+    if session.get('user_type') not in ('admin', 'knowledge_admin'): return jsonify({"error": "Forbidden"}), 403
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            if request.method == 'DELETE':
+                cur.execute("DELETE FROM Specialties WHERE id = %s", (sid,))
+            else:
+                data = request.json
+                cur.execute("UPDATE Specialties SET name = %s, description = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+                            (data['name'], data.get('description', ''), sid))
+        conn.commit()
+        conn.close()
+        return jsonify({"message": "OK"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/api/admin/symptoms', methods=['GET'])
@@ -498,8 +531,44 @@ def list_symptoms():
         conn.close()
         return jsonify({"symptoms": [dict(r) for r in rows]})
     except Exception as e:
-        print(f"Lỗi hệ thống: {e}")
         return jsonify({"error": "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau."}), 500
+
+@app.route('/api/admin/symptoms', methods=['POST'])
+def add_symptom():
+    if session.get('user_type') not in ('admin', 'knowledge_admin'): return jsonify({"error": "Forbidden"}), 403
+    data = request.json
+    try:
+        embedding = engine.get_embedding(data['name'])
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute("""INSERT INTO Symptoms (code, name, question_text, is_red_flag, embedding) 
+                           VALUES (%s, %s, %s, %s, %s) RETURNING id""",
+                        (data['code'], data['name'], data.get('question_text', ''), data.get('is_red_flag', False), embedding))
+            new_id = cur.fetchone()[0]
+        conn.commit()
+        conn.close()
+        return jsonify({"message": "OK", "id": new_id}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/symptoms/<int:sid>', methods=['PUT', 'DELETE'])
+def edit_symptom(sid):
+    if session.get('user_type') not in ('admin', 'knowledge_admin'): return jsonify({"error": "Forbidden"}), 403
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            if request.method == 'DELETE':
+                cur.execute("DELETE FROM Symptoms WHERE id = %s", (sid,))
+            else:
+                data = request.json
+                embedding = engine.get_embedding(data['name'])
+                cur.execute("""UPDATE Symptoms SET name = %s, question_text = %s, is_red_flag = %s, embedding = %s, updated_at = CURRENT_TIMESTAMP 
+                               WHERE id = %s""", (data['name'], data.get('question_text', ''), data.get('is_red_flag', False), embedding, sid))
+        conn.commit()
+        conn.close()
+        return jsonify({"message": "OK"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/api/admin/diseases', methods=['GET'])
@@ -517,8 +586,42 @@ def list_diseases():
         conn.close()
         return jsonify({"diseases": [dict(r) for r in rows]})
     except Exception as e:
-        print(f"Lỗi hệ thống: {e}")
         return jsonify({"error": "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau."}), 500
+
+@app.route('/api/admin/diseases', methods=['POST'])
+def add_disease():
+    if session.get('user_type') not in ('admin', 'knowledge_admin'): return jsonify({"error": "Forbidden"}), 403
+    data = request.json
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute("""INSERT INTO Diseases (icd_code, name, description, specialty_id) 
+                           VALUES (%s, %s, %s, %s) RETURNING id""",
+                        (data.get('icd_code', ''), data['name'], data.get('description', ''), data['specialty_id']))
+            new_id = cur.fetchone()[0]
+        conn.commit()
+        conn.close()
+        return jsonify({"message": "OK", "id": new_id}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/diseases/<int:did>', methods=['PUT', 'DELETE'])
+def edit_disease(did):
+    if session.get('user_type') not in ('admin', 'knowledge_admin'): return jsonify({"error": "Forbidden"}), 403
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            if request.method == 'DELETE':
+                cur.execute("DELETE FROM Diseases WHERE id = %s", (did,))
+            else:
+                data = request.json
+                cur.execute("""UPDATE Diseases SET name = %s, icd_code = %s, description = %s, specialty_id = %s, updated_at = CURRENT_TIMESTAMP 
+                               WHERE id = %s""", (data['name'], data.get('icd_code', ''), data.get('description', ''), data['specialty_id'], did))
+        conn.commit()
+        conn.close()
+        return jsonify({"message": "OK"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/api/admin/rules/<int:disease_id>', methods=['GET'])
@@ -538,8 +641,28 @@ def get_rules(disease_id):
         conn.close()
         return jsonify({"rules": [dict(r) for r in rows]})
     except Exception as e:
-        print(f"Lỗi hệ thống: {e}")
         return jsonify({"error": "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau."}), 500
+
+@app.route('/api/admin/rules/<int:disease_id>', methods=['POST'])
+def save_rules(disease_id):
+    if session.get('user_type') not in ('admin', 'knowledge_admin'): return jsonify({"error": "Forbidden"}), 403
+    data = request.json
+    rules = data.get('rules', [])
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            # Delete old rules for this disease
+            cur.execute("DELETE FROM Knowledge_Rules WHERE disease_id = %s", (disease_id,))
+            for r in rules:
+                cur.execute("""INSERT INTO Knowledge_Rules (disease_id, symptom_id, weight, is_mandatory, is_exclusion)
+                               VALUES (%s, %s, %s, %s, %s)""",
+                            (disease_id, r['symptom_id'], r['weight'], r.get('is_mandatory', False), r.get('is_exclusion', False)))
+        conn.commit()
+        conn.close()
+        # Reload cache if TriageEngine caches rules (optional, if it queries DB every time it's fine)
+        return jsonify({"message": "OK"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/api/admin/stats', methods=['GET'])
@@ -577,8 +700,79 @@ def admin_stats():
             "specialty_distribution": specialty_stats,
         })
     except Exception as e:
-        print(f"Lỗi hệ thống: {e}")
         return jsonify({"error": "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau."}), 500
+
+@app.route('/api/admin/sandbox/start', methods=['POST'])
+def sandbox_start():
+    if session.get('user_type') not in ('admin', 'knowledge_admin'): return jsonify({"error": "Forbidden"}), 403
+    # Mở một mock session không lưu vào database
+    mock_id = -1
+    active_chats[mock_id] = ChatbotSession(mock_id, engine)
+    active_chats[mock_id].state = 'collecting'
+    return jsonify({
+        "session_id": mock_id,
+        "messages": [{"text": "🧠 [SANDBOX] Trợ lý AI sẵn sàng. Hãy nhập triệu chứng để kiểm thử bộ luật."}]
+    })
+
+@app.route('/api/admin/sandbox/chat', methods=['POST'])
+def sandbox_chat():
+    if session.get('user_type') not in ('admin', 'knowledge_admin'): return jsonify({"error": "Forbidden"}), 403
+    data = request.json
+    mock_id = -1
+    message = data.get('message', '').strip()
+    
+    if mock_id not in active_chats:
+        return jsonify({"error": "Phiên giả lập đã hết hạn"}), 404
+    
+    chat_sess = active_chats[mock_id]
+    
+    # Fake processing without saving user message to DB
+    # We call internal methods to bypass DB insertion
+    if chat_sess.state == 'collecting':
+        symptoms_dict = extractor.extract(message)
+        chat_sess.symptoms.update(symptoms_dict)
+    elif chat_sess.state == 'confirming':
+        text_lower = message.lower()
+        if chat_sess.current_question:
+            sid = chat_sess.current_question['id']
+            if any(w in text_lower for w in ["có", "đúng", "vâng", "phải"]):
+                chat_sess.symptoms[sid] = chat_sess.current_question
+                chat_sess.symptoms[sid]['confidence'] = 0.95
+                chat_sess.symptoms[sid]['is_present'] = True
+            elif any(w in text_lower for w in ["không", "sai", "chưa"]):
+                chat_sess.symptoms[sid] = chat_sess.current_question
+                chat_sess.symptoms[sid]['confidence'] = 0.95
+                chat_sess.symptoms[sid]['is_present'] = False
+            chat_sess.current_question = None
+            
+    diseases = engine.calculate_disease_scores(chat_sess.symptoms)
+    
+    if len(chat_sess.symptoms) >= 6 or chat_sess.questions_asked >= chat_sess.max_questions:
+        chat_sess.state = 'finished'
+        recommendation = "Kết quả mô phỏng (Sandbox):\n"
+        if diseases:
+            for i, d in enumerate(diseases[:3]):
+                recommendation += f"{i+1}. {d['disease_name']} ({d['hybrid_score']:.1f} điểm)\n"
+            suggested = diseases[0]['disease_name']
+            recommendation += f"\nĐịnh tuyến gợi ý: {suggested}"
+        else:
+            recommendation += "Không tìm thấy bệnh lý phù hợp."
+            
+        del active_chats[mock_id]
+        return jsonify({"status": "finished", "messages": [{"text": recommendation, "type": "result"}]})
+        
+    # Generate next question
+    chat_sess.current_question = chat_sess._select_next_question(diseases)
+    if chat_sess.current_question:
+        chat_sess.questions_asked += 1
+        chat_sess.state = 'confirming'
+        return jsonify({"status": "confirming", "messages": [
+            {"text": f"[Câu {chat_sess.questions_asked}]: {chat_sess.current_question['question_text']}", "options": ["Có", "Không rõ", "Không"]}
+        ]})
+    else:
+        chat_sess.state = 'finished'
+        del active_chats[mock_id]
+        return jsonify({"status": "finished", "messages": [{"text": "Hoàn tất kiểm thử (hết câu hỏi).", "type": "result"}]})
 
 
 # ════════════════════════════════════════════

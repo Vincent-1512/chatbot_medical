@@ -32,7 +32,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Login type change
     document.getElementById('login-type').addEventListener('change', (e) => {
         const label = document.getElementById('login-user-label');
-        label.textContent = e.target.value === 'patient' ? 'Số điện thoại' : 'Username / Email';
+        const input = document.getElementById('login-username');
+        if (e.target.value === 'patient') {
+            label.textContent = 'Số điện thoại';
+            input.placeholder = 'Nhập số điện thoại đã đăng ký';
+        } else {
+            label.textContent = 'Username / Email';
+            input.placeholder = 'Nhập username hoặc email';
+        }
     });
 });
 
@@ -69,7 +76,7 @@ function updateNavForUser(user) {
         document.getElementById('nav-doctor').classList.remove('hidden');
         document.getElementById('doc-avatar').textContent = initial;
         document.getElementById('doc-name-display').textContent = user.user_name;
-    } else if (user.user_type === 'admin') {
+    } else if (user.user_type === 'admin' || user.user_type === 'knowledge_admin') {
         document.getElementById('nav-admin').classList.remove('hidden');
         document.getElementById('admin-avatar').textContent = initial;
         document.getElementById('admin-name-display').textContent = user.user_name;
@@ -124,7 +131,7 @@ async function doLogin(e) {
         updateNavForUser(data);
 
         if (data.user_type === 'patient') showPage('dashboard');
-        else if (data.role === 'doctor') showPage('doctor-queue');
+        else if (data.user_type === 'doctor') showPage('doctor-queue');
         else showPage('admin-dashboard');
     } catch (err) {
         errEl.textContent = 'Lỗi kết nối server';
@@ -197,8 +204,16 @@ function showPage(page) {
     const target = document.getElementById('page-' + page);
     if (target) {
         target.classList.remove('hidden');
+        // Re-trigger animation
+        target.style.animation = 'none';
+        target.offsetHeight; /* trigger reflow */
+        target.style.animation = null; 
     } else {
-        document.getElementById('page-landing').classList.remove('hidden');
+        const landing = document.getElementById('page-landing');
+        landing.classList.remove('hidden');
+        landing.style.animation = 'none';
+        landing.offsetHeight;
+        landing.style.animation = null;
         return;
     }
 
@@ -395,9 +410,16 @@ function escapeHtml(text) {
 function showTypingIndicator() {
     const container = document.getElementById('chat-messages');
     const div = document.createElement('div');
-    div.className = 'typing-indicator';
+    div.className = 'chat-msg bot';
     div.id = 'typing-indicator';
-    div.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+    div.innerHTML = `
+        <div class="msg-avatar">AI</div>
+        <div>
+            <div class="msg-bubble typing-indicator-bubble" style="display:flex;gap:4px;align-items:center;padding:14px 16px;">
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+        </div>
+    `;
     container.appendChild(div);
     scrollChat();
 }
@@ -410,7 +432,7 @@ function removeTypingIndicator() {
 function scrollChat() {
     const container = document.getElementById('chat-messages');
     setTimeout(() => {
-        container.scrollTop = container.scrollHeight;
+        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
     }, 50);
 }
 
@@ -730,45 +752,292 @@ async function showAdminTab(tab) {
     const bodyEl = document.getElementById('admin-table-body');
 
     try {
+        const btnAdd = document.getElementById('btn-add-new');
+        const tableCard = document.getElementById('admin-table-card');
+        const sandboxCard = document.getElementById('sandbox-card');
+        
+        if (tab === 'sandbox') {
+            tableCard.classList.add('hidden');
+            sandboxCard.classList.remove('hidden');
+            if(document.getElementById('sandbox-messages').innerHTML === '') startSandbox();
+            return;
+        } else {
+            tableCard.classList.remove('hidden');
+            sandboxCard.classList.add('hidden');
+            btnAdd.classList.remove('hidden');
+            btnAdd.onclick = () => openCrudModal(tab);
+        }
+
         if (tab === 'specialties') {
             titleEl.textContent = '🏥 Danh mục Chuyên khoa';
             const res = await fetch(API + '/api/admin/specialties', { credentials: 'include' });
             const data = await res.json();
-            headEl.innerHTML = '<tr><th>ID</th><th>Mã</th><th>Tên chuyên khoa</th><th>Mô tả</th></tr>';
+            headEl.innerHTML = '<tr><th>ID</th><th>Mã</th><th>Tên chuyên khoa</th><th>Mô tả</th><th>Thao tác</th></tr>';
             bodyEl.innerHTML = (data.specialties || []).map(s => `
-                <tr><td>${s.id}</td><td><code>${escapeHtml(s.code)}</code></td><td><strong>${escapeHtml(s.name)}</strong></td><td>${escapeHtml(s.description || '')}</td></tr>
+                <tr><td>${s.id}</td><td><code>${escapeHtml(s.code)}</code></td><td><strong>${escapeHtml(s.name)}</strong></td><td>${escapeHtml(s.description || '')}</td>
+                <td><button class="btn btn-outline" style="padding:4px 8px;font-size:0.8rem;" onclick='openCrudModal("specialties", ${JSON.stringify(s)})'>Sửa</button>
+                <button class="btn btn-danger" style="padding:4px 8px;font-size:0.8rem;" onclick="deleteRecord('specialties', ${s.id})">Xóa</button></td></tr>
             `).join('');
         } else if (tab === 'symptoms') {
             titleEl.textContent = '🩺 Danh mục Triệu chứng';
             const res = await fetch(API + '/api/admin/symptoms', { credentials: 'include' });
             const data = await res.json();
-            headEl.innerHTML = '<tr><th>ID</th><th>Mã</th><th>Tên</th><th>Câu hỏi AI</th><th>Red Flag</th></tr>';
+            headEl.innerHTML = '<tr><th>ID</th><th>Mã</th><th>Tên</th><th>Câu hỏi AI</th><th>Red Flag</th><th>Thao tác</th></tr>';
             bodyEl.innerHTML = (data.symptoms || []).map(s => `
                 <tr>
                     <td>${s.id}</td>
                     <td><code>${escapeHtml(s.code)}</code></td>
                     <td>${escapeHtml(s.name)}</td>
-                    <td style="max-width:300px;">${escapeHtml(s.question_text || '')}</td>
+                    <td style="max-width:200px;">${escapeHtml(s.question_text || '')}</td>
                     <td>${s.is_red_flag ? '<span class="badge badge-danger">🚩 Cờ đỏ</span>' : '<span class="badge badge-neutral">Bình thường</span>'}</td>
+                    <td><button class="btn btn-outline" style="padding:4px 8px;font-size:0.8rem;" onclick='openCrudModal("symptoms", ${JSON.stringify(s)})'>Sửa</button>
+                    <button class="btn btn-danger" style="padding:4px 8px;font-size:0.8rem;" onclick="deleteRecord('symptoms', ${s.id})">Xóa</button></td>
                 </tr>
             `).join('');
         } else if (tab === 'diseases') {
             titleEl.textContent = '🦠 Danh mục Bệnh lý';
             const res = await fetch(API + '/api/admin/diseases', { credentials: 'include' });
             const data = await res.json();
-            headEl.innerHTML = '<tr><th>ID</th><th>ICD</th><th>Tên bệnh</th><th>Chuyên khoa</th></tr>';
+            headEl.innerHTML = '<tr><th>ID</th><th>ICD</th><th>Tên bệnh</th><th>Chuyên khoa</th><th>Thao tác</th></tr>';
             bodyEl.innerHTML = (data.diseases || []).map(d => `
                 <tr>
                     <td>${d.id}</td>
                     <td><code>${escapeHtml(d.icd_code || '')}</code></td>
                     <td><strong>${escapeHtml(d.name)}</strong></td>
                     <td><span class="badge badge-info">${escapeHtml(d.specialty_name)}</span></td>
+                    <td style="white-space:nowrap;">
+                        <button class="btn btn-primary" style="padding:4px 8px;font-size:0.8rem;" onclick="openRulesModal(${d.id}, '${escapeHtml(d.name)}')">Luật</button>
+                        <button class="btn btn-outline" style="padding:4px 8px;font-size:0.8rem;" onclick='openCrudModal("diseases", ${JSON.stringify(d)})'>Sửa</button>
+                        <button class="btn btn-danger" style="padding:4px 8px;font-size:0.8rem;" onclick="deleteRecord('diseases', ${d.id})">Xóa</button>
+                    </td>
                 </tr>
             `).join('');
         }
     } catch (e) {
         bodyEl.innerHTML = `<tr><td colspan="5" style="color:var(--danger);">Lỗi: ${e.message}</td></tr>`;
     }
+}
+
+// ════════════════════════════════════════════
+// ADMIN CRUD LOGIC
+// ════════════════════════════════════════════
+let currentCrudTab = '';
+let currentCrudId = null;
+
+async function openCrudModal(tab, data = null) {
+    currentCrudTab = tab;
+    currentCrudId = data ? data.id : null;
+    const modal = document.getElementById('crud-modal');
+    const title = document.getElementById('crud-modal-title');
+    const body = document.getElementById('crud-modal-body');
+    
+    title.textContent = data ? "Cập nhật" : "Thêm mới";
+    let html = '';
+    
+    if(tab === 'specialties') {
+        html = `
+            <div class="form-group"><label>Mã chuyên khoa (Code)</label><input type="text" id="crud-code" value="${data?escapeHtml(data.code):''}" ${data?'disabled':''}></div>
+            <div class="form-group"><label>Tên chuyên khoa</label><input type="text" id="crud-name" value="${data?escapeHtml(data.name):''}"></div>
+            <div class="form-group"><label>Mô tả</label><textarea id="crud-desc">${data?escapeHtml(data.description||''):''}</textarea></div>
+        `;
+    } else if(tab === 'symptoms') {
+        html = `
+            <div class="form-group"><label>Mã triệu chứng</label><input type="text" id="crud-code" value="${data?escapeHtml(data.code):''}" ${data?'disabled':''}></div>
+            <div class="form-group"><label>Tên chuẩn y khoa</label><input type="text" id="crud-name" value="${data?escapeHtml(data.name):''}"></div>
+            <div class="form-group"><label>Câu hỏi xác nhận AI</label><input type="text" id="crud-question" value="${data?escapeHtml(data.question_text||''):''}"></div>
+            <div class="form-group"><label><input type="checkbox" id="crud-redflag" ${data&&data.is_red_flag?'checked':''}> Là dấu hiệu nguy kịch (Red Flag)</label></div>
+        `;
+    } else if(tab === 'diseases') {
+        // fetch specialties for select
+        const res = await fetch(API + '/api/admin/specialties', { credentials: 'include' });
+        const resData = await res.json();
+        const specOptions = (resData.specialties || []).map(s => `<option value="${s.id}" ${data&&data.specialty_id===s.id?'selected':''}>${escapeHtml(s.name)}</option>`).join('');
+        
+        html = `
+            <div class="form-group"><label>Mã ICD</label><input type="text" id="crud-icd" value="${data?escapeHtml(data.icd_code||''):''}"></div>
+            <div class="form-group"><label>Tên bệnh lý</label><input type="text" id="crud-name" value="${data?escapeHtml(data.name):''}"></div>
+            <div class="form-group"><label>Chuyên khoa</label><select id="crud-spec">${specOptions}</select></div>
+            <div class="form-group"><label>Mô tả</label><textarea id="crud-desc">${data?escapeHtml(data.description||''):''}</textarea></div>
+        `;
+    }
+    
+    body.innerHTML = html;
+    modal.style.display = 'flex';
+}
+
+function closeCrudModal() { document.getElementById('crud-modal').style.display = 'none'; }
+
+async function saveCrudData() {
+    let payload = {};
+    if(currentCrudTab === 'specialties') {
+        payload = { code: document.getElementById('crud-code').value, name: document.getElementById('crud-name').value, description: document.getElementById('crud-desc').value };
+    } else if(currentCrudTab === 'symptoms') {
+        payload = { code: document.getElementById('crud-code').value, name: document.getElementById('crud-name').value, question_text: document.getElementById('crud-question').value, is_red_flag: document.getElementById('crud-redflag').checked };
+    } else if(currentCrudTab === 'diseases') {
+        payload = { icd_code: document.getElementById('crud-icd').value, name: document.getElementById('crud-name').value, description: document.getElementById('crud-desc').value, specialty_id: parseInt(document.getElementById('crud-spec').value) };
+    }
+
+    const url = API + '/api/admin/' + currentCrudTab + (currentCrudId ? '/' + currentCrudId : '');
+    const method = currentCrudId ? 'PUT' : 'POST';
+
+    try {
+        const res = await fetch(url, { method, headers: {'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify(payload) });
+        if(res.ok) {
+            closeCrudModal();
+            showAdminTab(currentCrudTab);
+        } else {
+            alert('Lỗi khi lưu dữ liệu');
+        }
+    } catch(e) { alert(e.message); }
+}
+
+async function deleteRecord(tab, id) {
+    if(!confirm("Bạn có chắc chắn muốn xóa bản ghi này?")) return;
+    try {
+        const res = await fetch(API + '/api/admin/' + tab + '/' + id, { method: 'DELETE', credentials: 'include' });
+        if(res.ok) showAdminTab(tab);
+        else alert('Xóa thất bại (Có thể do ràng buộc dữ liệu)');
+    } catch(e) { alert(e.message); }
+}
+
+// ════════════════════════════════════════════
+// RULES ENGINE LOGIC
+// ════════════════════════════════════════════
+let currentRulesDiseaseId = null;
+
+async function openRulesModal(diseaseId, diseaseName) {
+    currentRulesDiseaseId = diseaseId;
+    document.getElementById('rules-disease-name').textContent = diseaseName;
+    document.getElementById('rules-modal').style.display = 'flex';
+    document.getElementById('rules-table-body').innerHTML = '<tr><td colspan="5">Đang tải...</td></tr>';
+    
+    try {
+        // Load symptoms for dropdown
+        const symRes = await fetch(API + '/api/admin/symptoms', { credentials: 'include' });
+        const symData = await symRes.json();
+        document.getElementById('rule-symptom-select').innerHTML = '<option value="">-- Chọn triệu chứng --</option>' + (symData.symptoms||[]).map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+        
+        // Load rules
+        const res = await fetch(API + '/api/admin/rules/' + diseaseId, { credentials: 'include' });
+        const data = await res.json();
+        const rules = data.rules || [];
+        document.getElementById('rules-table-body').innerHTML = '';
+        rules.forEach(r => appendRuleRow(r.symptom_id, r.symptom_name, r.weight, r.is_mandatory, r.is_exclusion));
+    } catch(e) {
+        document.getElementById('rules-table-body').innerHTML = `<tr><td colspan="5" style="color:red">${e.message}</td></tr>`;
+    }
+}
+
+function closeRulesModal() { document.getElementById('rules-modal').style.display = 'none'; }
+
+function appendRuleRow(symptomId, symptomName, weight, isMandatory, isExclusion) {
+    const tbody = document.getElementById('rules-table-body');
+    const tr = document.createElement('tr');
+    tr.dataset.symptomId = symptomId;
+    tr.innerHTML = `
+        <td>${escapeHtml(symptomName)}</td>
+        <td><input type="number" min="0" max="10" step="0.1" value="${weight}" class="rule-weight" style="width:60px;"></td>
+        <td><input type="checkbox" class="rule-mandatory" ${isMandatory?'checked':''}></td>
+        <td><input type="checkbox" class="rule-exclusion" ${isExclusion?'checked':''}></td>
+        <td><button class="btn btn-danger" style="padding:4px; font-size: 0.8rem;" onclick="this.closest('tr').remove()">Xóa</button></td>
+    `;
+    tbody.appendChild(tr);
+}
+
+function addRuleRow() {
+    const sel = document.getElementById('rule-symptom-select');
+    if(!sel.value) return;
+    const symId = sel.value;
+    const symName = sel.options[sel.selectedIndex].text;
+    
+    // Check if already exists
+    const existing = Array.from(document.querySelectorAll('#rules-table-body tr')).find(tr => tr.dataset.symptomId === symId);
+    if(existing) { alert("Triệu chứng này đã có trong luật."); return; }
+    
+    appendRuleRow(symId, symName, 5.0, false, false);
+}
+
+async function saveRulesData() {
+    const rows = document.querySelectorAll('#rules-table-body tr');
+    const rules = [];
+    rows.forEach(tr => {
+        rules.push({
+            symptom_id: parseInt(tr.dataset.symptomId),
+            weight: parseFloat(tr.querySelector('.rule-weight').value),
+            is_mandatory: tr.querySelector('.rule-mandatory').checked,
+            is_exclusion: tr.querySelector('.rule-exclusion').checked
+        });
+    });
+    
+    try {
+        const res = await fetch(API + '/api/admin/rules/' + currentRulesDiseaseId, {
+            method: 'POST', headers: {'Content-Type':'application/json'}, credentials:'include',
+            body: JSON.stringify({rules})
+        });
+        if(res.ok) { alert("Lưu luật thành công!"); closeRulesModal(); }
+        else alert("Lỗi khi lưu luật");
+    } catch(e) { alert(e.message); }
+}
+
+// ════════════════════════════════════════════
+// SANDBOX AI LOGIC
+// ════════════════════════════════════════════
+async function startSandbox() {
+    document.getElementById('sandbox-messages').innerHTML = '';
+    document.getElementById('sandbox-input').value = '';
+    document.getElementById('sandbox-input').disabled = false;
+    document.getElementById('sandbox-send').disabled = false;
+    
+    try {
+        const res = await fetch(API + '/api/admin/sandbox/start', { method: 'POST', credentials: 'include' });
+        const data = await res.json();
+        if(data.messages) {
+            data.messages.forEach(m => appendSandboxMsg(m.text, 'bot'));
+        }
+    } catch(e) { appendSandboxMsg("Lỗi khởi tạo Sandbox: " + e.message, 'bot'); }
+}
+
+async function sendSandboxMessage() {
+    const input = document.getElementById('sandbox-input');
+    const text = input.value.trim();
+    if(!text) return;
+    
+    appendSandboxMsg(text, 'user');
+    input.value = '';
+    
+    try {
+        const res = await fetch(API + '/api/admin/sandbox/chat', {
+            method: 'POST', headers: {'Content-Type':'application/json'}, credentials:'include',
+            body: JSON.stringify({message: text})
+        });
+        const data = await res.json();
+        if(data.messages) {
+            data.messages.forEach(m => {
+                if(m.options) {
+                    appendSandboxMsg(m.text + "<br><br>Gợi ý: " + m.options.join(" / "), 'bot');
+                } else {
+                    appendSandboxMsg(m.text, 'bot', m.type === 'result');
+                }
+            });
+        }
+        if(data.status === 'finished') {
+            document.getElementById('sandbox-input').disabled = true;
+            document.getElementById('sandbox-send').disabled = true;
+        }
+    } catch(e) { appendSandboxMsg("Lỗi xử lý: " + e.message, 'bot'); }
+}
+
+function appendSandboxMsg(text, role, isResult=false) {
+    const container = document.getElementById('sandbox-messages');
+    const div = document.createElement('div');
+    div.className = `chat-msg ${role}`;
+    div.innerHTML = `
+        ${role === 'bot' ? '<div class="msg-avatar">🤖</div>' : ''}
+        <div class="msg-bubble" style="${isResult?'background:var(--success);color:white;':''}">${formatBotText(text)}</div>
+        ${role === 'user' ? '<div class="msg-avatar">👨‍⚕️</div>' : ''}
+    `;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
 }
 
 // ════════════════════════════════════════════
