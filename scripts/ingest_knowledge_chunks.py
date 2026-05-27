@@ -9,11 +9,12 @@ load_dotenv()
 
 def ingest_chunks():
     # 1. Đọc dữ liệu đã map
-    if not os.path.exists("knowledge_chunks.csv"):
-        print("❌ Lỗi: Không tìm thấy file knowledge_chunks.csv. Hãy chạy scripts/auto_mapping.py trước.")
+    csv_path = os.path.join(os.path.dirname(__file__), '../data/knowledge_chunks.csv')
+    if not os.path.exists(csv_path):
+        print(f"❌ Lỗi: Không tìm thấy file {csv_path}. Hãy chạy scripts/auto_mapping.py trước.")
         return
     
-    df = pd.read_csv("knowledge_chunks.csv")
+    df = pd.read_csv(csv_path)
     print(f"🚀 Bắt đầu nạp {len(df)} chunks vào Database...")
 
     # 2. Load Model Embedding

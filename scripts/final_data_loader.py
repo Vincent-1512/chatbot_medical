@@ -24,12 +24,13 @@ def load_all_data():
     print("💡 Đang tải Model ngôn ngữ (BAAI/bge-m3)...")
     model = SentenceTransformer('BAAI/bge-m3')
 
-    print("🚀 Bắt đầu đọc dữ liệu từ thư mục 'data/'...")
-    df_dataset = pd.read_csv('data/dataset.csv')
-    df_sym_map = pd.read_csv('data/symptom_mapping.csv')
-    df_dis_map = pd.read_csv('data/disease_mapping.csv')
-    df_severity = pd.read_csv('data/Symptom-severity.csv')
-    df_precaution = pd.read_csv('data/symptom_precaution_vn.csv')
+    print("🚀 Bắt đầu đọc dữ liệu từ thư mục '../data/'...")
+    data_dir = os.path.join(os.path.dirname(__file__), '../data')
+    df_dataset = pd.read_csv(os.path.join(data_dir, 'dataset.csv'))
+    df_sym_map = pd.read_csv(os.path.join(data_dir, 'symptom_mapping.csv'))
+    df_dis_map = pd.read_csv(os.path.join(data_dir, 'disease_mapping.csv'))
+    df_severity = pd.read_csv(os.path.join(data_dir, 'Symptom-severity.csv'))
+    df_precaution = pd.read_csv(os.path.join(data_dir, 'symptom_precaution_vn.csv'))
 
     # Làm sạch dữ liệu
     df_severity['Symptom'] = df_severity['Symptom'].str.strip()

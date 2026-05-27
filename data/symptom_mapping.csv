@@ -3,14 +3,14 @@ STT,English_Name,Vietnamese_Name
 2,nodal_skin_eruptions,nổi cục trên da
 3,sweating,đổ mồ hôi
 4,puffy_face_and_eyes,mặt và mắt phù nề
-5,stomach_pain,đau dạ dày / đau thượng vị
+5,stomach_pain,đau dạ dày / đau thượng vị / đau bao tử / xót ruột / đau vùng bụng trên
 6,knee_pain,đau đầu gối
 7,enlarged_thyroid,bướu cổ / tuyến giáp phì đại
 8,red_spots_over_body,chấm đỏ khắp người
 9,ulcers_on_tongue,loét lưỡi
 10,swollen_blood_vessels,mạch máu sưng / nổi
 11,irritation_in_anus,kích ứng hậu môn
-12,mild_fever,sốt nhẹ
+12,mild_fever,sốt nhẹ / người hâm hấp / hơi sốt / sốt lâm râm
 13,blurred_and_distorted_vision,nhìn mờ và biến dạng
 14,muscle_wasting,teo cơ
 15,lethargy,hôn mê / uể oải
@@ -51,7 +51,7 @@ STT,English_Name,Vietnamese_Name
 50,burning_micturition,tiểu buốt
 51,visual_disturbances,rối loạn thị giác
 52,indigestion,khó tiêu
-53,vomiting,nôn mửa
+53,vomiting,nôn mửa / ói / nôn / mắc ói / nôn tháo
 54,bruising,bầm tím
 55,weakness_in_limbs,yếu chi
 56,excessive_hunger,đói cồn cào
@@ -69,16 +69,16 @@ STT,English_Name,Vietnamese_Name
 68,weight_loss,sụt cân
 69,pain_during_bowel_movements,đau khi đi đại tiện
 70,bladder_discomfort,khó chịu bàng quang
-71,nausea,buồn nôn
+71,nausea,buồn nôn / mắc ói / lợm giọng / nôn nao
 72,spotting_ urination,tiểu rắt
 73,congestion,nghẹt mũi
 74,swollen_legs,chân sưng
-75,dizziness,chóng mặt
+75,dizziness,chóng mặt / hoa mắt / xây xẩm / choáng váng / váng đầu
 76,hip_joint_pain,đau khớp háng
 77,yellowing_of_eyes,vàng mắt
 78,muscle_weakness,yếu cơ
 79,mucoid_sputum,đờm nhầy
-80,cough,ho
+80,cough,ho / ho khan / ho có đờm / ho sặc sụa / ho kéo dài
 81,stomach_bleeding,xuất huyết dạ dày
 82,joint_pain,đau khớp
 83,movement_stiffness,cứng khớp
@@ -86,14 +86,14 @@ STT,English_Name,Vietnamese_Name
 85,swelling_of_stomach,bụng trướng
 86,irritability,cáu kỉnh
 87,silver_like_dusting,vảy trắng như bạc
-88,high_fever,sốt cao
+88,high_fever,sốt cao / sốt hầm hập / sốt trên 39 độ
 89,polyuria,tiểu nhiều
 90,passage_of_gases,trung tiện
 91,neck_pain,đau cổ
 92,painful_walking,đi lại đau
 93,sunken_eyes,mắt trũng
 94,abnormal_menstruation,kinh nguyệt bất thường
-95,itching,ngứa
+95,itching,ngứa / ngứa ngáy / nổi mẩn ngứa / ngứa râm ran
 96,yellow_urine,nước tiểu vàng
 97,patches_in_throat,mảng ở họng
 98,cold_hands_and_feets,tay chân lạnh
@@ -116,14 +116,14 @@ STT,English_Name,Vietnamese_Name
 115,internal_itching,ngứa trong người
 116,increased_appetite,tăng cảm giác thèm ăn
 117,slurred_speech,nói ngọng
-118,headache,đau đầu
+118,headache,đau đầu / nhức đầu / đau nửa đầu / váng đầu / nặng đầu
 119,depression,trầm cảm
 120,abdominal_pain,đau bụng
-121,diarrhoea,tiêu chảy
+121,diarrhoea,tiêu chảy / đi ngoài / đi lỏng / tướt / đi cầu phân lỏng
 122,shivering,run
 123,swollen_extremeties,sưng chi
 124,continuous_sneezing,hắt hơi liên tục
-125,chest_pain,đau ngực
+125,chest_pain,đau ngực / tức ngực / đau thắt ngực / nặng ngực / nhói ngực
 126,rusty_sputum,đờm màu gỉ sắt
 127,weight_gain,tăng cân
 128,receiving_unsterile_injections,đã tiêm chích không vô trùng

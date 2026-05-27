@@ -17,7 +17,8 @@ def populate_synonyms():
     cur = conn.cursor()
 
     # 2. Đọc mapping file
-    df = pd.read_csv("symptom_mapping.csv")
+    csv_path = os.path.join(os.path.dirname(__file__), '../data/symptom_mapping.csv')
+    df = pd.read_csv(csv_path)
     
     print("🔄 Đang xóa synonyms cũ...")
     cur.execute("TRUNCATE TABLE Symptom_Synonyms")

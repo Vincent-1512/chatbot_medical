@@ -5,11 +5,12 @@ print("🚀 BẮT ĐẦU QUÁ TRÌNH AUTO-MAPPING...")
 
 # 1. Đọc dữ liệu
 try:
-    qa_df = pd.read_csv("vihealthqa_raw.csv")
-    symp_df = pd.read_csv("symptom_mapping.csv")
+    data_dir = os.path.join(os.path.dirname(__file__), '../data')
+    qa_df = pd.read_csv(os.path.join(data_dir, "vihealthqa_raw.csv"))
+    symp_df = pd.read_csv(os.path.join(data_dir, "symptom_mapping.csv"))
 except FileNotFoundError as e:
     print(f"❌ Lỗi: Không tìm thấy file - {e}")
-    print("💡 Vui lòng đảm bảo 2 file vihealthqa_raw.csv và symptom_mapping.csv nằm cùng thư mục với script.")
+    print("💡 Vui lòng đảm bảo 2 file vihealthqa_raw.csv và symptom_mapping.csv nằm trong thư mục data/.")
     exit()
 
 # 2. Tạo từ điển triệu chứng
@@ -45,7 +46,7 @@ for index, row in qa_df.iterrows():
         })
 
 # 4. Xuất ra file dữ liệu "Sạch" để nạp vào Chatbot
-output_file = "knowledge_chunks.csv"
+output_file = os.path.join(data_dir, "knowledge_chunks.csv")
 result_df = pd.DataFrame(mapped_data)
 result_df.to_csv(output_file, index=False, encoding='utf-8-sig')
 
