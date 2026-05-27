@@ -111,7 +111,7 @@ class ChatbotSession:
 
     def _handle_first_input(self, user_text: str):
         """Xử lý tin nhắn đầu tiên: rút trích triệu chứng ban đầu."""
-        extracted = self.extractor.extract(user_text, threshold=0.78)
+        extracted = self.extractor.extract(user_text, threshold=0.60)
 
         if not extracted:
             responses = [{
@@ -136,7 +136,7 @@ class ChatbotSession:
 
     def _handle_additional_input(self, user_text: str):
         """Xử lý free text bổ sung thêm triệu chứng."""
-        extracted = self.extractor.extract(user_text, threshold=0.78)
+        extracted = self.extractor.extract(user_text, threshold=0.60)
         new_symptoms = []
 
         for sym in extracted:
@@ -192,7 +192,7 @@ class ChatbotSession:
 
         else:
             # Free text response → cố gắng extract thêm triệu chứng
-            extracted = self.extractor.extract(user_text, threshold=0.78)
+            extracted = self.extractor.extract(user_text, threshold=0.60)
             found_pending = False
             for sym in extracted:
                 if sym['id'] == pending['symptom_id']:

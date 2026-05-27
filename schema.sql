@@ -87,7 +87,7 @@ CREATE TABLE Knowledge_Chunks (
 
 CREATE TABLE Patients (
     id SERIAL PRIMARY KEY,
-    external_patient_id VARCHAR(50) UNIQUE, -- Đồng bộ từ hệ thống Web phòng khám
+    external_patient_id VARCHAR(255) UNIQUE, -- Đồng bộ từ hệ thống Web phòng khám
     full_name VARCHAR(100) NOT NULL,
     phone VARCHAR(15),
     gender VARCHAR(10),

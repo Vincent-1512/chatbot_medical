@@ -105,7 +105,8 @@ def register_patient():
 
         return jsonify({"success": True, "patient_id": patient_id, "name": full_name})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Lỗi hệ thống: {e}")
+        return jsonify({"error": "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau."}), 500
 
 
 @app.route('/api/auth/login', methods=['POST'])
@@ -180,7 +181,8 @@ def login():
                 })
         conn.close()
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Lỗi hệ thống: {e}")
+        return jsonify({"error": "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau."}), 500
 
 
 @app.route('/api/auth/logout', methods=['POST'])
@@ -377,7 +379,8 @@ def doctor_queue():
             result.append(item)
         return jsonify({"queue": result})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Lỗi hệ thống: {e}")
+        return jsonify({"error": "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau."}), 500
 
 
 @app.route('/api/doctor/session/<int:sid>', methods=['GET'])
@@ -432,7 +435,8 @@ def doctor_session_detail(sid):
             "recommendation": recommendation,
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Lỗi hệ thống: {e}")
+        return jsonify({"error": "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau."}), 500
 
 
 @app.route('/api/doctor/verify/<int:sid>', methods=['POST'])
@@ -462,7 +466,8 @@ def doctor_verify(sid):
         conn.close()
         return jsonify({"success": True})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Lỗi hệ thống: {e}")
+        return jsonify({"error": "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau."}), 500
 
 
 # ════════════════════════════════════════════
@@ -479,7 +484,8 @@ def list_specialties():
         conn.close()
         return jsonify({"specialties": [dict(r) for r in rows]})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Lỗi hệ thống: {e}")
+        return jsonify({"error": "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau."}), 500
 
 
 @app.route('/api/admin/symptoms', methods=['GET'])
@@ -492,7 +498,8 @@ def list_symptoms():
         conn.close()
         return jsonify({"symptoms": [dict(r) for r in rows]})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Lỗi hệ thống: {e}")
+        return jsonify({"error": "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau."}), 500
 
 
 @app.route('/api/admin/diseases', methods=['GET'])
@@ -510,7 +517,8 @@ def list_diseases():
         conn.close()
         return jsonify({"diseases": [dict(r) for r in rows]})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Lỗi hệ thống: {e}")
+        return jsonify({"error": "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau."}), 500
 
 
 @app.route('/api/admin/rules/<int:disease_id>', methods=['GET'])
@@ -530,7 +538,8 @@ def get_rules(disease_id):
         conn.close()
         return jsonify({"rules": [dict(r) for r in rows]})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Lỗi hệ thống: {e}")
+        return jsonify({"error": "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau."}), 500
 
 
 @app.route('/api/admin/stats', methods=['GET'])
@@ -568,7 +577,8 @@ def admin_stats():
             "specialty_distribution": specialty_stats,
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Lỗi hệ thống: {e}")
+        return jsonify({"error": "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau."}), 500
 
 
 # ════════════════════════════════════════════
