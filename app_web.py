@@ -305,56 +305,35 @@ if role == "👤 Bệnh nhân":
                             if s['id'] not in st.session_state.extracted_syms:
                                 st.session_state.extracted_syms.append(s['id'])
 
-                        # Kiểm tra cờ đỏ
-                        red_flags = engine.check_red_flags(st.session_state.extracted_syms)
-                        if red_flags:
-                            rf_names = [r['name'] for r in red_flags]
-                            emergency_text = (f"🚨 **CẢNH BÁO KHẨN CẤP:** Phát hiện dấu hiệu đe dọa sinh mạng: "
-                                              f"**{', '.join(rf_names)}**.\n\n"
-                                              f"Vui lòng đến bệnh viện cấp cứu gần nhất ngay lập tức!")
-                            st.session_state.chat_history.append({"role": "assistant", "content": emergency_text})
-                            engine.log_message(st.session_state.active_session_id, "assistant", emergency_text)
+                        # Chạy suy diễn
+                        results = engine.diagnose(st.session_state.extracted_syms)
 
-                            # Kết thúc phiên khẩn cấp
-                            engine.save_screening_result(
-                                st.session_state.active_session_id,
-                                suggested_specialty_id=1,
-                                triage_urgency="emergency",
-                                recommendation_text=emergency_text,
-                                disease_scores=[{"disease_id": 1, "rule_score": 1.0, "rank": 1}]
-                            )
+                        if results:
+                            top = results[0]
+
+                            # Tìm triệu chứng follow-up liên quan đến bệnh hàng đầu
+                            next_sym_id = _find_next_followup(top['disease_id'], st.session_state.extracted_syms)
+
+                            if next_sym_id and len(st.session_state.chat_history) < 12:
+                                st.session_state.followup_symptom_id = next_sym_id
+                                st.rerun()
+                            else:
+                                # Đủ thông tin → kết luận
+                                _finalize_screening(top, results)
+                                st.rerun()
+                        else:
+                            reply = "Thuật toán suy diễn chưa xác định được bệnh lý phù hợp. Bạn vui lòng tới quầy lễ tân để y tá phân luồng trực tiếp."
+                            st.session_state.chat_history.append({"role": "assistant", "content": reply})
+                            engine.log_message(st.session_state.active_session_id, "assistant", reply)
+                            # Đánh dấu abandoned
+                            conn = get_db_connection()
+                            with conn.cursor() as cur:
+                                cur.execute("UPDATE Chat_Sessions SET status='completed', end_time=NOW() WHERE id=%s",
+                                            (st.session_state.active_session_id,))
+                            conn.commit()
+                            conn.close()
                             st.session_state.session_finished = True
                             st.rerun()
-                        else:
-                            # Chạy suy diễn
-                            results = engine.diagnose(st.session_state.extracted_syms)
-
-                            if results:
-                                top = results[0]
-
-                                # Tìm triệu chứng follow-up liên quan đến bệnh hàng đầu
-                                next_sym_id = _find_next_followup(top['disease_id'], st.session_state.extracted_syms)
-
-                                if next_sym_id and len(st.session_state.chat_history) < 12:
-                                    st.session_state.followup_symptom_id = next_sym_id
-                                    st.rerun()
-                                else:
-                                    # Đủ thông tin → kết luận
-                                    _finalize_screening(top, results)
-                                    st.rerun()
-                            else:
-                                reply = "Thuật toán suy diễn chưa xác định được bệnh lý phù hợp. Bạn vui lòng tới quầy lễ tân để y tá phân luồng trực tiếp."
-                                st.session_state.chat_history.append({"role": "assistant", "content": reply})
-                                engine.log_message(st.session_state.active_session_id, "assistant", reply)
-                                # Đánh dấu abandoned
-                                conn = get_db_connection()
-                                with conn.cursor() as cur:
-                                    cur.execute("UPDATE Chat_Sessions SET status='completed', end_time=NOW() WHERE id=%s",
-                                                (st.session_state.active_session_id,))
-                                conn.commit()
-                                conn.close()
-                                st.session_state.session_finished = True
-                                st.rerun()
 
             # Nút hủy phiên (chỉ hiện khi phiên chưa kết thúc)
             if st.session_state.active_session_id and not st.session_state.session_finished:
@@ -766,7 +745,7 @@ elif role == "🧠 Chuyên viên Tri thức":
                 d_desc = st.text_area("Mô tả/Lời khuyên:")
                 if st.form_submit_button("Lưu bệnh lý") and d_name:
                     spec_id = int(df_spec[df_spec['name'] == d_spec]['id'].values[0])
-                    emb = engine.get_embedding(f"{d_name}. {d_desc}").tolist()
+                    emb = str(engine.get_embedding(f"{d_name}. {d_desc}").tolist())
                     cur = conn.cursor()
                     cur.execute("INSERT INTO Diseases (specialty_id, icd_code, name, description, embedding) VALUES (%s,%s,%s,%s,%s)",
                                 (spec_id, d_icd or None, d_name, d_desc, emb))
@@ -781,15 +760,15 @@ elif role == "🧠 Chuyên viên Tri thức":
                 s_code = st.text_input("Mã triệu chứng (VD: DIARRHEA):").upper().strip()
                 s_name = st.text_input("Tên triệu chứng chuẩn y khoa:")
                 s_q = st.text_input("Câu hỏi xác nhận AI:")
-                s_rf = st.checkbox("Triệu chứng cờ đỏ (Red Flag)")
+
                 s_syns = st.text_area("Từ đồng nghĩa (phẩy cách):")
                 if st.form_submit_button("Lưu triệu chứng") and s_code and s_name:
                     conn = get_db_connection()
                     cur = conn.cursor()
                     try:
-                        s_emb = engine.get_embedding(s_name).tolist()
-                        cur.execute("INSERT INTO Symptoms (code,name,question_text,is_red_flag,embedding) VALUES (%s,%s,%s,%s,%s) RETURNING id",
-                                    (s_code, s_name, s_q, s_rf, s_emb))
+                        s_emb = str(engine.get_embedding(s_name).tolist())
+                        cur.execute("INSERT INTO Symptoms (code,name,question_text,embedding) VALUES (%s,%s,%s,%s) RETURNING id",
+                                    (s_code, s_name, s_q, s_emb))
                         sym_id = cur.fetchone()[0]
                         if s_syns:
                             for syn in [x.strip() for x in s_syns.split(",") if x.strip()]:
@@ -804,7 +783,7 @@ elif role == "🧠 Chuyên viên Tri thức":
 
             st.subheader("🔍 Tra cứu triệu chứng")
             conn = get_db_connection()
-            df_sym = pd.read_sql("SELECT id, code, name, question_text, is_red_flag FROM Symptoms ORDER BY id DESC LIMIT 50", conn)
+            df_sym = pd.read_sql("SELECT id, code, name, question_text FROM Symptoms ORDER BY id DESC LIMIT 50", conn)
             st.dataframe(df_sym, use_container_width=True, hide_index=True)
             conn.close()
 
@@ -850,13 +829,8 @@ elif role == "🧠 Chuyên viên Tri thức":
                     for s in sand_ext:
                         st.markdown(f"- 🤒 **{s['name']}** ({s['confidence']*100:.1f}%) — {s['source']}")
                     sym_ids = [s['id'] for s in sand_ext]
-                    reds = engine.check_red_flags(sym_ids)
-                    st.write("**Bước 2: Red Flag:**")
-                    if reds:
-                        st.error(f"🚨 CỜ ĐỎ: {', '.join(r['name'] for r in reds)}")
-                    else:
-                        st.success("🟢 An toàn")
-                        results = engine.diagnose(sym_ids)
+                    st.write("**Bước 2: Red Flag (Đã vô hiệu hóa)**")
+                    results = engine.diagnose(sym_ids)
                         st.write("**Bước 3: Suy diễn:**")
                         if results:
                             st.dataframe(pd.DataFrame(results)[['disease_name','specialty_name','rule_score']], hide_index=True)
@@ -971,7 +945,7 @@ elif role == "⚙️ Quản trị IT":
                 src = st.selectbox("Loại nguồn:", ["combined_medical", "textbook", "medical_article"])
                 ms = st.text_input("Triệu chứng liên quan (VD: HEADACHE, NAUSEA):")
                 if st.form_submit_button("Nạp & Vectorize") and ct:
-                    emb = engine.get_embedding(ct).tolist()
+                    emb = str(engine.get_embedding(ct).tolist())
                     cur = conn.cursor()
                     cur.execute("INSERT INTO Knowledge_Chunks (source_type,chunk_text,mapped_symptoms,embedding) VALUES (%s,%s,%s,%s)",
                                 (src, ct, ms.strip().upper() or None, emb))

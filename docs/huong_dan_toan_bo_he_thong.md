@@ -1,4 +1,4 @@
-# 🏥 Hiểu Toàn Bộ Hệ Thống AI Triage Medical — Từ A đến Z
+# 🏥 Hiểu Toàn Bộ Hệ Thống AI Medical Chatbot — Từ A đến Z
 
 > [!NOTE]
 > Tài liệu này giải thích **mọi thứ** diễn ra trong dự án theo thứ tự thật sự xảy ra, từ lúc bật Docker cho đến khi bệnh nhân nhìn thấy kết quả trên màn hình.
@@ -17,7 +17,7 @@ Toàn bộ dự án gồm 3 tầng độc lập:
 ├─────────────────────────────────────────────────────┤
 │  TẦNG 2: Logic AI (Backend)                         │
 │  → File: symptom_extractor.py  (Phase 1)            │
-│  → File: triage_engine.py      (Phase 2 & 3)        │
+│  → File: triage_engine.py      (Phase 2)            │
 │  → Đây là "bộ não" xử lý toàn bộ                   │
 ├─────────────────────────────────────────────────────┤
 │  TẦNG 3: Kho Dữ Liệu (Database)                    │
@@ -51,7 +51,7 @@ python3 final_data_loader.py
 | File CSV | Chứa gì | Đưa vào bảng nào |
 |---|---|---|
 | `symptom_mapping.csv` | 131 tên triệu chứng (Anh+Việt) | `symptoms` |
-| `Symptom-severity.csv` | Điểm nguy hiểm (1-7) | `symptoms.is_red_flag` |
+| `Symptom-severity.csv` | Điểm nguy hiểm (1-7) | `symptoms` (tham khảo tính trọng số) |
 | `disease_mapping.csv` | 41 bệnh + thuộc khoa nào | `diseases`, `specialties` |
 | `symptom_precaution_vn.csv` | Lời khuyên chăm sóc | `diseases.description` |
 | `dataset.csv` | 4900+ ca bệnh mẫu | `knowledge_rules` |
@@ -123,24 +123,7 @@ Toán tử `<=>` là **Cosine Similarity** — đo góc giữa 2 vector. Góc nh
 
 ---
 
-### 🔴 PHASE 2 — Bộ Lọc Sinh Tồn (Red Flag)
-**File:** `triage_engine.py` → hàm `check_red_flags()`
-
-```sql
-SELECT id, name FROM Symptoms
-WHERE is_red_flag = true AND id IN (45, 89);
-```
-
-`is_red_flag = true` khi điểm severity trong CSV >= 5 (thang 1-7). Ví dụ: "Đau thắt ngực", "Khó thở nặng", "Mất ý thức"...
-
-```
-Không có cờ đỏ → Cho qua Phase 3 ✅
-Có cờ đỏ      → DỪNG, hiện cảnh báo đỏ lên UI 🚨
-```
-
----
-
-### 🔵 PHASE 3 — Chẩn Đoán Rule-Based (Toán Học)
+### 🔵 PHASE 2 — Chẩn Đoán Rule-Based (Toán Học)
 **File:** `triage_engine.py` → hàm `diagnose()` → `rule_based_score()`
 
 ```sql
@@ -162,7 +145,7 @@ ORDER BY score DESC;
 
 ---
 
-### 🟡 PHASE 4 — Đóng Gói và Hiển Thị
+### 🟡 PHASE 3 — Đóng Gói và Hiển Thị
 **File:** `app_web.py`
 
 ```sql
@@ -173,7 +156,6 @@ SELECT description FROM Diseases WHERE id = [ID_thoái_hóa_khớp];
 Streamlit render lên giao diện:
 ```
 ✅ Phase 1 (Vector): Đau khớp háng (82%), Đau cẳng chân (76%)
-ℹ️ Phase 2 (Sinh tồn): Không có dấu hiệu đe dọa tính mạng.
 📋 Kết quả: KHOA CƠ XƯƠNG KHỚP — Thoái Hóa Khớp (Điểm: 1.30)
 💡 Lời khuyên: Nghỉ ngơi | Chườm nóng | Tập vật lý trị liệu
 ```
@@ -208,13 +190,9 @@ flowchart TD
     C <--> D[("PostgreSQL\nsymptoms + embedding")]
     C --> E{"Tìm thấy\ntriệu chứng?"}
     E -- Không --> F["❓ Yêu cầu mô tả thêm"]
-    E -- Có --> G["triage_engine.py\ncheck_red_flags - Phase 2"]
-    G <--> H[("PostgreSQL\nsymptoms.is_red_flag")]
-    G --> I{"Có Cờ Đỏ?"}
-    I -- CÓ --> J["🚨 ALERT CẤP CỨU"]
-    I -- Không --> K["triage_engine.py\ndiagnose - Phase 3\nSUM weight GROUP BY"]
+    E -- Có --> K["triage_engine.py\ndiagnose - Phase 2\nSUM weight GROUP BY"]
     K <--> L[("PostgreSQL\nknowledge_rules")]
-    K --> M["app_web.py\nPhase 4: Render kết quả"]
+    K --> M["app_web.py\nPhase 3: Render kết quả"]
     M --> N["✅ Hiển thị Chuyên khoa + Lời khuyên"]
 ```
 

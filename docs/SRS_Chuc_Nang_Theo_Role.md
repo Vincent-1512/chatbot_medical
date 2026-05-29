@@ -1,13 +1,14 @@
 # 📋 ĐẶC TẢ YÊU CẦU PHẦN MỀM (SRS)
-## HỆ THỐNG CHATBOT SÀNG LỌC TRIỆU CHỨNG Y TẾ — AI TRIAGE MEDICAL
+## HỆ THỐNG CHATBOT SÀNG LỌC TRIỆU CHỨNG Y TẾ — AI MEDICAL CHATBOT
 
 ---
 
 | Thông tin | Nội dung |
 |:---|:---|
-| **Tên dự án** | AI Triage Medical — Hệ thống Phân luồng Y tế Thông minh |
-| **Phiên bản tài liệu** | 1.0 |
+| **Tên dự án** | AI Medical Chatbot — Hệ thống Chatbot Sàng lọc Triệu chứng Y tế Thông minh |
+| **Phiên bản tài liệu** | 2.0 |
 | **Ngày tạo** | 23/05/2026 |
+| **Ngày cập nhật** | 28/05/2026 |
 | **Công nghệ** | Python (Flask + Streamlit), PostgreSQL + pgvector, SentenceTransformers (BAAI/bge-m3) |
 | **Kiến trúc** | Monolithic — Offline 100% — Docker Compose |
 
@@ -29,10 +30,10 @@
 ## 1. TỔNG QUAN HỆ THỐNG
 
 ### 1.1. Mục đích
-Hệ thống AI Triage Medical là chatbot sàng lọc triệu chứng y tế thông minh, tích hợp vào website phòng khám để:
+Hệ thống AI Medical Chatbot là chatbot sàng lọc triệu chứng y tế thông minh, tích hợp vào website phòng khám để:
 - **Thu thập** triệu chứng từ ngôn ngữ tự nhiên của bệnh nhân bằng NLP (Vector Search + RAG).
 - **Suy diễn** bệnh lý tiềm năng bằng Rule-based Expert System (Hệ chuyên gia luật trọng số).
-- **Phân luồng** bệnh nhân đến chuyên khoa phù hợp, đánh giá mức độ khẩn cấp.
+- **Gợi ý** chuyên khoa phù hợp để bệnh nhân đi khám, kèm lời khuyên chăm sóc sức khỏe.
 - **Hỗ trợ** bác sĩ tiếp nhận bệnh nhân nhanh chóng thông qua phiếu tóm tắt sàng lọc.
 
 ### 1.2. Phạm vi
@@ -44,13 +45,12 @@ Hệ thống AI Triage Medical là chatbot sàng lọc triệu chứng y tế th
 | Feedback loop bác sĩ xác minh AI | Kiểm thử bảo mật chuyên sâu |
 | Quản trị tài khoản nhân sự | Triển khai production server |
 
-### 1.3. Kiến trúc xử lý 4 Phase
+### 1.3. Kiến trúc xử lý 3 Phase
 
 ```
 Phase 1: Vector Search (NLP)     → Bóc tách triệu chứng từ văn bản tự nhiên
-Phase 2: Red Flag Filter         → Quét cờ đỏ, cảnh báo khẩn cấp
-Phase 3: Inference Engine        → Suy diễn bệnh lý bằng luật trọng số
-Phase 4: Output & Routing        → Gợi ý chuyên khoa + lời khuyên
+Phase 2: Inference Engine        → Suy diễn bệnh lý bằng luật trọng số
+Phase 3: Output & Suggestion     → Gợi ý chuyên khoa + lời khuyên chăm sóc
 ```
 
 ---
@@ -94,9 +94,8 @@ Bệnh nhân là đối tượng sử dụng dịch vụ chính. Họ tương t�
 | **BN-CHAT-01** | **Khởi tạo phiên tư vấn mới** | Bệnh nhân nhấn "Bắt đầu tư vấn". Hệ thống: (1) Tạo record `Chat_Sessions` với `status = 'in_progress'`. (2) Khởi tạo `ChatbotSession` in-memory. (3) Gửi tin nhắn chào mừng tự động. (4) Hỗ trợ **Guest Mode** cho khách chưa đăng nhập (tạo patient tạm). | `Chat_Sessions`, `Message_Logs` |
 | **BN-CHAT-02** | **Gửi tin nhắn mô tả triệu chứng** | Bệnh nhân gõ văn bản tự do (VD: "tôi bị đau đầu, buồn nôn và chóng mặt"). Hệ thống: (1) Log tin nhắn vào `Message_Logs`. (2) Gọi `SymptomExtractor.extract()` để bóc tách triệu chứng bằng Vector Search. (3) Lưu triệu chứng nhận diện được vào `Session_Symptoms`. (4) Trả về danh sách triệu chứng đã ghi nhận. | `Message_Logs`, `Session_Symptoms`, `Symptoms` |
 | **BN-CHAT-03** | **Trả lời câu hỏi xác nhận AI** | Chatbot hỏi câu hỏi đóng (VD: "Bạn có bị sốt không?"). Bệnh nhân nhấn **[Có]**, **[Không]**, hoặc **[Không rõ]**. Hệ thống: (1) Phân loại câu trả lời qua `detect_response_type()`. (2) Cập nhật `Session_Symptoms` với `is_present = true/false`. (3) Kích hoạt Inference Engine tính lại điểm. | `Session_Symptoms`, `Knowledge_Rules` |
-| **BN-CHAT-04** | **Nhận kết quả sàng lọc** | Khi đủ thông tin (hoặc đạt tối đa 6 câu hỏi follow-up), hệ thống: (1) Chạy `diagnose()` để tính tổng điểm trọng số. (2) Hiển thị: Chuyên khoa gợi ý, Bệnh lý nghi ngờ (top 3), Mức độ ưu tiên, Lời khuyên chăm sóc. (3) Lưu kết quả vào `Session_Disease_Scores` và `Session_Recommendations`. (4) Cập nhật `Chat_Sessions` → `status = 'completed'`. | `Session_Disease_Scores`, `Session_Recommendations`, `Chat_Sessions` |
-| **BN-CHAT-05** | **Cảnh báo khẩn cấp (Red Flag)** | Nếu phát hiện triệu chứng cờ đỏ (`is_red_flag = true`), hệ thống ngay lập tức: (1) Ngắt toàn bộ luồng suy diễn. (2) Hiển thị cảnh báo đỏ "🚨 CẢNH BÁO KHẨN CẤP". (3) Khuyến nghị bệnh nhân đến cơ sở y tế gần nhất. (4) Đánh dấu `triage_urgency = 'emergency'`. | `Symptoms`, `Chat_Sessions` |
-| **BN-CHAT-06** | **Hủy phiên tư vấn** | Bệnh nhân nhấn "Hủy phiên" hoặc đóng chatbot. Hệ thống cập nhật `status = 'abandoned'`, ghi `end_time = NOW()`. Xóa state in-memory. | `Chat_Sessions` |
+| **BN-CHAT-04** | **Nhận kết quả sàng lọc** | Khi đủ thông tin (hoặc đạt tối đa 6 câu hỏi follow-up), hệ thống: (1) Chạy `diagnose()` để tính tổng điểm trọng số. (2) Hiển thị: Chuyên khoa gợi ý, Bệnh lý nghi ngờ (top 3), Lời khuyên chăm sóc. (3) Lưu kết quả vào `Session_Disease_Scores` và `Session_Recommendations`. (4) Cập nhật `Chat_Sessions` → `status = 'completed'`. | `Session_Disease_Scores`, `Session_Recommendations`, `Chat_Sessions` |
+| **BN-CHAT-05** | **Hủy phiên tư vấn** | Bệnh nhân nhấn "Hủy phiên" hoặc đóng chatbot. Hệ thống cập nhật `status = 'abandoned'`, ghi `end_time = NOW()`. Xóa state in-memory. | `Chat_Sessions` |
 
 #### 📋 MODULE: HỒ SƠ SỨC KHỎE
 
@@ -109,7 +108,7 @@ Bệnh nhân là đối tượng sử dụng dịch vụ chính. Họ tương t�
 
 | Mã | Chức năng | Mô tả chi tiết | Bảng CSDL liên quan |
 |:---:|:---|:---|:---|
-| **BN-HIST-01** | **Xem danh sách phiên tư vấn** | Bệnh nhân truy cập tab "Lịch sử Sàng lọc". Hiển thị danh sách các phiên chat đã thực hiện: Thời gian, Chuyên khoa gợi ý, Mức độ khẩn cấp, Trạng thái. Sắp xếp theo `start_time DESC`. | `Chat_Sessions`, `Specialties`, `Session_Recommendations` |
+| **BN-HIST-01** | **Xem danh sách phiên tư vấn** | Bệnh nhân truy cập tab "Lịch sử Sàng lọc". Hiển thị danh sách các phiên chat đã thực hiện: Thời gian, Chuyên khoa gợi ý, Trạng thái. Sắp xếp theo `start_time DESC`. | `Chat_Sessions`, `Specialties`, `Session_Recommendations` |
 | **BN-HIST-02** | **Xem chi tiết phiên chat cũ** | Bệnh nhân click vào 1 phiên. Hiển thị toàn bộ lịch sử bong bóng chat và phiếu kết quả. **Chế độ Read-only** — không cho phép gửi tin nhắn mới. | `Message_Logs`, `Session_Recommendations` |
 
 ### 3.3. Luồng xử lý chính (Chatbot Flow)
@@ -125,31 +124,21 @@ Bệnh nhân là đối tượng sử dụng dịch vụ chính. Họ tương t�
                                │     CÓ                          KHÔNG           │
                                └──────┬──────────────────────────┬───────────────┘
                                       │                          │
-                               ┌──────▼──────┐           ┌──────▼──────────────┐
-                               │ Kiểm tra    │           │ Yêu cầu mô tả lại  │
-                               │ Red Flag    │           │ chi tiết hơn        │
-                               └──────┬──────┘           └─────────────────────┘
+                               ┌──────▼──────────┐       ┌──────▼──────────────┐
+                               │ Inference Engine│       │ Yêu cầu mô tả lại  │
+                               │ (Rule-based)    │       │ chi tiết hơn        │
+                               └──────┬──────────┘       └─────────────────────┘
                                       │
-                        ┌─────────────▼─────────────┐
-                        │    Có Red Flag?            │
-                        │   CÓ              KHÔNG   │
-                        └──┬─────────────────┬──────┘
-                           │                 │
-                    ┌──────▼──────┐   ┌──────▼──────────┐
-                    │ 🚨 CẢNH BÁO │   │ Inference Engine│
-                    │ KHẨN CẤP   │   │ (Rule-based)    │
-                    │ → KẾT THÚC │   └──────┬──────────┘
-                    └─────────────┘          │
-                                      ┌─────▼───────────┐
-                                      │ Cần hỏi thêm?   │
-                                      │ (≤ 6 câu hỏi)   │
-                                      └──┬──────────┬────┘
-                                    CÓ   │          │ KHÔNG
-                                  ┌──────▼────┐ ┌───▼──────────┐
-                                  │ Hỏi xác   │ │ 📋 KẾT QUẢ  │
-                                  │ nhận thêm │ │ SÀNG LỌC     │
-                                  │ Có/Không  │ │ → KẾT THÚC   │
-                                  └───────────┘ └──────────────┘
+                               ┌─────▼───────────┐
+                               │ Cần hỏi thêm?   │
+                               │ (≤ 6 câu hỏi)   │
+                               └──┬──────────┬────┘
+                                CÓ │          │ KHÔNG
+                              ┌──────▼────┐ ┌───▼──────────┐
+                              │ Hỏi xác   │ │ 📋 KẾT QUẢ  │
+                              │ nhận thêm │ │ SÀNG LỌC     │
+                              │ Có/Không  │ │ → KẾT THÚC   │
+                              └───────────┘ └──────────────┘
 ```
 
 ---
@@ -157,7 +146,7 @@ Bệnh nhân là đối tượng sử dụng dịch vụ chính. Họ tương t�
 ## 4. ROLE 2: BÁC SĨ LÂM SÀNG (DOCTOR)
 
 ### 4.1. Tổng quan
-Bác sĩ truy cập cổng thông tin nội bộ (Portal) để xem danh sách bệnh nhân đã được AI phân luồng về khoa mình, xem chi tiết báo cáo sàng lọc, và phản hồi đánh giá chất lượng AI (Feedback Loop).
+Bác sĩ truy cập cổng thông tin nội bộ (Portal) để xem danh sách bệnh nhân đã được AI sàng lọc và gợi ý về khoa mình, xem chi tiết báo cáo sàng lọc, và phản hồi đánh giá chất lượng AI (Feedback Loop).
 
 ### 4.2. Bảng yêu cầu chức năng chi tiết
 
@@ -167,13 +156,6 @@ Bác sĩ truy cập cổng thông tin nội bộ (Portal) để xem danh sách b
 |:---:|:---|:---|:---|
 | **BS-AUTH-01** | **Đăng nhập Portal Bác sĩ** | Bác sĩ nhập Username/Email + Mật khẩu tại trang đăng nhập nội bộ. Hệ thống: (1) Truy vấn `Staff_Accounts` với điều kiện `is_active = true`. (2) So khớp Bcrypt. (3) Kiểm tra `role = 'doctor'`. (4) Thiết lập session: `user_type`, `staff_id`, `user_name`, `specialty_id`. | `Staff_Accounts`, `Specialties` |
 | **BS-AUTH-02** | **Đăng xuất** | Bác sĩ nhấn "Đăng xuất". Hệ thống xóa session state, trở về màn hình đăng nhập. | — |
-
-#### 📋 MODULE: HÀNG ĐỢI SÀNG LỌC (TRIAGE QUEUE)
-
-| Mã | Chức năng | Mô tả chi tiết | Bảng CSDL liên quan |
-|:---:|:---|:---|:---|
-| **BS-QUEUE-01** | **Xem hàng đợi bệnh nhân** | Hiển thị danh sách bệnh nhân đã được AI điều hướng về khoa của bác sĩ đang đăng nhập. **Bộ lọc tự động:** `suggested_specialty_id = [specialty_id của bác sĩ]` AND `status = 'completed'`. **Sắp xếp:** Ca `emergency` lên đầu, sau đó theo `end_time DESC`. Hiển thị: Tên BN, Giới tính, Ngày sinh, Mức độ khẩn cấp, Thời gian sàng lọc. | `Chat_Sessions`, `Patients`, `Specialties` |
-| **BS-QUEUE-02** | **Đánh dấu ca cấp cứu** | Các ca có `triage_urgency = 'emergency'` tự động được **bôi nền đỏ**, kèm icon cảnh báo 🚨, và **ghim lên đầu danh sách**. | `Chat_Sessions` |
 
 #### 🔍 MODULE: CHI TIẾT BÁO CÁO SÀNG LỌC
 
@@ -194,17 +176,17 @@ Bác sĩ truy cập cổng thông tin nội bộ (Portal) để xem danh sách b
 ### 4.3. Luồng xử lý chính (Doctor Flow)
 
 ```
-┌────────────────┐     ┌─────────────────────┐     ┌──────────────────┐
-│  Đăng nhập     │────▶│  Xem hàng đợi       │────▶│  Click vào 1 ca  │
-│  Portal Bác sĩ │     │  (Lọc theo khoa)    │     │  bệnh cụ thể     │
-└────────────────┘     └─────────────────────┘     └────────┬─────────┘
-                                                            │
-                                                   ┌───────▼────────────┐
-                                                   │  Xem chi tiết:     │
-                                                   │  • Thông tin BN    │
-                                                   │  • Kết luận AI     │
-                                                   │  • Lịch sử chat   │
-                                                   └───────┬────────────┘
+┌────────────────┐     ┌─────────────────────┐
+│  Đăng nhập     │────▶│  Tìm kiếm/Xem       │
+│  Portal Bác sĩ │     │  danh sách ca bệnh  │
+└────────────────┘     └────────┬────────────┘
+                                │
+                       ┌───────▼────────────┐
+                       │  Xem chi tiết:     │
+                       │  • Thông tin BN    │
+                       │  • Kết luận AI     │
+                       │  • Lịch sử chat   │
+                       └───────┬────────────┘
                                                             │
                                                    ┌───────▼────────────┐
                                                    │  Feedback Loop:    │
@@ -246,8 +228,8 @@ Chuyên viên Tri thức (Knowledge Admin) là chuyên gia y tế có trách nhi
 
 | Mã | Chức năng | Mô tả chi tiết | Bảng CSDL liên quan |
 |:---:|:---|:---|:---|
-| **KMA-SYM-01** | **Xem danh sách Triệu chứng** | Hiển thị 50 triệu chứng gần nhất: ID, Mã code, Tên chuẩn y khoa, Câu hỏi xác nhận AI, Cờ Red Flag. Sắp xếp theo ID giảm dần. | `Symptoms` |
-| **KMA-SYM-02** | **Thêm mới Triệu chứng** | Nhập: Mã triệu chứng (uppercase), Tên chuẩn y khoa, Câu hỏi xác nhận AI (VD: "Bạn có bị ho không?"), Checkbox Red Flag, Từ đồng nghĩa (phẩy cách). Hệ thống: (1) Tự động embedding tên triệu chứng → vector(1024). (2) INSERT vào `Symptoms`. (3) Parse và INSERT từ đồng nghĩa vào `Symptom_Synonyms`. **Ràng buộc:** Bọc trong 1 SQL Transaction để đảm bảo tính toàn vẹn. | `Symptoms`, `Symptom_Synonyms` |
+| **KMA-SYM-01** | **Xem danh sách Triệu chứng** | Hiển thị 50 triệu chứng gần nhất: ID, Mã code, Tên chuẩn y khoa, Câu hỏi xác nhận AI. Sắp xếp theo ID giảm dần. | `Symptoms` |
+| **KMA-SYM-02** | **Thêm mới Triệu chứng** | Nhập: Mã triệu chứng (uppercase), Tên chuẩn y khoa, Câu hỏi xác nhận AI (VD: "Bạn có bị ho không?"), Từ đồng nghĩa (phẩy cách). Hệ thống: (1) Tự động embedding tên triệu chứng → vector(1024). (2) INSERT vào `Symptoms`. (3) Parse và INSERT từ đồng nghĩa vào `Symptom_Synonyms`. **Ràng buộc:** Bọc trong 1 SQL Transaction để đảm bảo tính toàn vẹn. | `Symptoms`, `Symptom_Synonyms` |
 
 #### ⛓️ MODULE: CẤU HÌNH MA TRẬN LUẬT SUY DIỄN
 
@@ -265,7 +247,7 @@ Chuyên viên Tri thức (Knowledge Admin) là chuyên gia y tế có trách nhi
 
 | Mã | Chức năng | Mô tả chi tiết | Bảng CSDL liên quan |
 |:---:|:---|:---|:---|
-| **KMA-SAND-01** | **Kiểm thử Động cơ suy diễn** | Chuyên viên nhập mô tả bệnh ảo (VD: "đau bụng dữ dội, nôn mửa"). Hệ thống chạy tuần tự 3 bước: **Bước 1 — Vector Match:** Hiển thị triệu chứng nhận diện được + độ tin cậy. **Bước 2 — Red Flag:** Kiểm tra cờ đỏ (An toàn / Cảnh báo). **Bước 3 — Suy diễn:** Hiển thị bảng kết quả (Tên bệnh, Chuyên khoa, Điểm rule). **⚠️ RÀNG BUỘC QUAN TRỌNG:** Tuyệt đối KHÔNG lưu kết quả vào DB, tránh làm bẩn dữ liệu khám thật. | `Symptoms`, `Knowledge_Rules`, `Diseases` (chỉ READ) |
+| **KMA-SAND-01** | **Kiểm thử Động cơ suy diễn** | Chuyên viên nhập mô tả bệnh ảo (VD: "đau bụng dữ dội, nôn mửa"). Hệ thống chạy tuần tự 2 bước: **Bước 1 — Vector Match:** Hiển thị triệu chứng nhận diện được + độ tin cậy. **Bước 2 — Suy diễn:** Hiển thị bảng kết quả (Tên bệnh, Chuyên khoa, Điểm rule). **⚠️ RÀNG BUỘC QUAN TRỌNG:** Tuyệt đối KHÔNG lưu kết quả vào DB, tránh làm bẩn dữ liệu khám thật. | `Symptoms`, `Knowledge_Rules`, `Diseases` (chỉ READ) |
 
 ### 5.3. Luồng xử lý chính (Knowledge Admin Flow)
 
@@ -320,8 +302,8 @@ Quản trị viên IT có quyền cao nhất trong hệ thống. Chịu trách n
 
 | Mã | Chức năng | Mô tả chi tiết | Bảng CSDL liên quan |
 |:---:|:---|:---|:---|
-| **SA-DASH-01** | **Xem tổng quan hệ thống** | Hiển thị 3 metric chính: (1) Tổng số phiên chat (`COUNT(*) FROM Chat_Sessions`). (2) Tỷ lệ cảnh báo khẩn cấp (% emergency). (3) Số nhân viên đang hoạt động. | `Chat_Sessions`, `Staff_Accounts` |
-| **SA-DASH-02** | **Biểu đồ phân bổ chuyên khoa** | Biểu đồ cột (Bar chart) hiển thị số lượng phiên chat được phân luồng về từng chuyên khoa. Dữ liệu: `GROUP BY suggested_specialty_id JOIN Specialties`. | `Chat_Sessions`, `Specialties` |
+| **SA-DASH-01** | **Xem tổng quan hệ thống** | Hiển thị 2 metric chính: (1) Tổng số phiên chat (`COUNT(*) FROM Chat_Sessions`). (2) Số nhân viên đang hoạt động. | `Chat_Sessions`, `Staff_Accounts` |
+| **SA-DASH-02** | **Biểu đồ phân bổ chuyên khoa** | Biểu đồ cột (Bar chart) hiển thị số lượng phiên chat được gợi ý về từng chuyên khoa. Dữ liệu: `GROUP BY suggested_specialty_id JOIN Specialties`. | `Chat_Sessions`, `Specialties` |
 
 #### 💬 MODULE: DEBUG AI
 
@@ -369,7 +351,6 @@ Quản trị viên IT có quyền cao nhất trong hệ thống. Chịu trách n
 | Chatbot sàng lọc triệu chứng | ✅ | ❌ | ❌ | ❌ |
 | Xem/Cập nhật hồ sơ sức khỏe | ✅ | ❌ | ❌ | ❌ |
 | Xem lịch sử tư vấn cá nhân | ✅ | ❌ | ❌ | ❌ |
-| Xem hàng đợi sàng lọc (theo khoa) | ❌ | ✅ | ❌ | ✅* |
 | Xem chi tiết báo cáo sàng lọc | ❌ | ✅ | ❌ | ✅* |
 | Feedback Loop — Xác minh AI | ❌ | ✅ | ❌ | ✅* |
 | Xuất báo cáo sàng lọc | ❌ | ✅ | ❌ | ❌ |
@@ -384,7 +365,7 @@ Quản trị viên IT có quyền cao nhất trong hệ thống. Chịu trách n
 | Debug AI Logs | ❌ | ❌ | ❌ | ✅ |
 | Cấu hình tham số AI | ❌ | ❌ | ❌ | ✅ |
 
-> *\* Admin có quyền truy cập hàng đợi sàng lọc và chi tiết báo cáo (cùng quyền với Doctor trong API `/api/doctor/`).*
+> *\* Admin có quyền truy cập tìm kiếm và chi tiết báo cáo (cùng quyền với Doctor trong API `/api/doctor/`).*
 
 ---
 

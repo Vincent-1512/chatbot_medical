@@ -1,6 +1,6 @@
-# Chatbot Medical (AI Triage System)
+# Chatbot Medical (AI Medical Chatbot)
 
-Dự án Hệ thống Chatbot AI sàng lọc y tế thông minh (Triage).
+Dự án Hệ thống Chatbot AI sàng lọc triệu chứng và hỗ trợ chẩn đoán y tế thông minh.
 
 ## Cấu trúc thư mục mới:
 

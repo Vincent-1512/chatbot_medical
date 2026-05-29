@@ -1,12 +1,12 @@
 # Chatbot sàng lọc triệu chứng bệnh: Tích hợp hệ chuyên gia vào website phòng khám để hỏi bệnh nhân về các triệu chứng và gợi ý chuyên khoa cần khám.
 
-## 1\. Khảo sát hiện trạng quy trình phân luồng chuyên khoa
+## 1\. Khảo sát hiện trạng quy trình tư vấn y tế ban đầu
 
-### **1.1. Mục tiêu khảo sát** Tìm hiểu chi tiết cách thức phòng khám hiện tại đang tiếp nhận bệnh nhân và phân luồng chuyên khoa thủ công (qua lễ tân hoặc y tá trực). Từ đó, xác định các "điểm nghẽn" trong quá trình giao tiếp để chuyển đổi sang mô hình Chatbot tự động, giúp tối ưu hóa thời gian chờ đợi và tăng độ chính xác khi chỉ định chuyên khoa lâm sàng.
+### **1.1. Mục tiêu khảo sát** Tìm hiểu chi tiết cách thức phòng khám hiện tại đang tiếp nhận bệnh nhân và tư vấn chuyên khoa thủ công (qua lễ tân hoặc y tá trực). Từ đó, xác định các "điểm nghẽn" trong quá trình giao tiếp để chuyển đổi sang mô hình Chatbot tự động, giúp tối ưu hóa thời gian chờ đợi và tăng độ chính xác khi gợi ý chuyên khoa lâm sàng.
 
 ### **1.2. Các hình thức thực hiện khảo sát** Để thu thập dữ liệu đa chiều, dự án sử dụng kết hợp các phương pháp sau:
 
-* ### **Quan sát thực tế (Observation):** \* Theo dõi trực tiếp quá trình bệnh nhân mô tả triệu chứng bằng ngôn ngữ đời thường cho nhân viên phân luồng tại quầy tiếp đón.
+* ### **Quan sát thực tế (Observation):** \* Theo dõi trực tiếp quá trình bệnh nhân mô tả triệu chứng bằng ngôn ngữ đời thường cho nhân viên tư vấn tại quầy tiếp đón.
 
   * ### Ghi nhận cách thức nhân viên y tế đặt các "câu hỏi đóng" (Có/Không) để xác nhận hoặc loại trừ các chuyên khoa không liên quan.
 
@@ -32,13 +32,13 @@
 
 ## 2\. Quy trình thực hiện khảo sát và phân tích
 
-### **2.1. Tìm hiểu tổng quan về thế giới thực** Hệ thống Chatbot đóng vai trò như một "Y tá phân luồng kỹ thuật số" (Digital Triage Nurse), hoạt động 24/7 để hỗ trợ tư vấn y tế ban đầu. Mục tiêu cốt lõi là giải quyết tình trạng bệnh nhân không có chuyên môn y tế, mô tả triệu chứng mơ hồ dẫn đến đi khám sai chuyên khoa, đồng thời giảm tải áp lực khai thác bệnh sử thủ công (hỏi đáp lặp đi lặp lại) cho đội ngũ y tế tại quầy tiếp đón.
+### **2.1. Tìm hiểu tổng quan về thế giới thực** Hệ thống Chatbot đóng vai trò như một "Trợ lý tư vấn y tế kỹ thuật số" (Digital Medical Assistant), hoạt động 24/7 để hỗ trợ tư vấn y tế ban đầu. Mục tiêu cốt lõi là giải quyết tình trạng bệnh nhân không có chuyên môn y tế, mô tả triệu chứng mơ hồ dẫn đến đi khám sai chuyên khoa, đồng thời giảm tải áp lực khai thác bệnh sử thủ công (hỏi đáp lặp đi lặp lại) cho đội ngũ y tế tại quầy tiếp đón.
 
 ### **2.2. Tìm hiểu hiện trạng tổ chức (Xác định các tác nhân tham gia)** Cơ cấu vận hành của hệ thống phần mềm xoay quanh 3 nhóm đối tượng chính với vai trò tách biệt:
 
-* ### **Đối ngoại (Bệnh nhân / Người dùng cuối): Quyền hạn:** Là người trực tiếp tương tác với Chatbot bằng văn bản (ngôn ngữ tự nhiên) để khai báo bệnh trạng và nhận tư vấn định hướng chuyên khoa. **Trách nhiệm:** cung cấp thông tin chính xác để hệ thống phân luồng.
+* ### **Đối ngoại (Bệnh nhân / Người dùng cuối): Quyền hạn:** Là người trực tiếp tương tác với Chatbot bằng văn bản (ngôn ngữ tự nhiên) để khai báo bệnh trạng và nhận tư vấn gợi ý chuyên khoa. **Trách nhiệm:** cung cấp thông tin chính xác để hệ thống gợi ý chuyên khoa phù hợp.
 
-* ### **Đối nội (Bác sĩ / Nhân viên y tế): Quyền hạn:** Được hệ thống tự động phân quyền truy cập, hiển thị và tra cứu "Phiếu tóm tắt triệu chứng" cùng lịch sử phiên chat của những bệnh nhân được điều hướng về khoa mình. **Trách nhiệm:** Kiểm tra đối chiều thông tin sàng lọc của AI để làm cơ sở lâm sàng nhanh, đảm bảo tính chính xác trược khi tiếp nhận bệnh nhân vào khám thưc tế. 
+* ### **Đối nội (Bác sĩ / Nhân viên y tế): Quyền hạn:** Được hệ thống tự động phân quyền truy cập, hiển thị và tra cứu "Phiếu tóm tắt triệu chứng" cùng lịch sử phiên chat của những bệnh nhân được gợi ý về khoa mình. **Trách nhiệm:** Kiểm tra đối chiếu thông tin sàng lọc của AI để làm cơ sở lâm sàng nhanh, đảm bảo tính chính xác trước khi tiếp nhận bệnh nhân vào khám thực tế.
 
 * ### **Đối nội (Quản trị viên / Kỹ sư tri thức y khoa): Quyền hạn:** Được quyền  nạp dữ liệu y khoa, cấu hình trọng số và tinh chỉnh các tập luật (Rules) cho Hệ chuyên gia. **Trách nhiệm:**  Đảm bảo tính chính xác, an toàn của cơ sở tri thức y tế.
 
@@ -54,11 +54,11 @@
 
 * ### **Nghiệp vụ Tính toán & Logic (Processing & Reasoning):** Đây là nghiệp vụ cốt lõi nhất. Động cơ suy diễn (Inference Engine) thực hiện tính toán tổng điểm trọng số (`weight`) của các triệu chứng, đồng thời quét qua các bộ luật bắt buộc (`is_mandatory`) và luật loại trừ (`is_exclusion`) để triệt tiêu các bệnh lý không phù hợp.
 
-* ### **Nghiệp vụ Tổng hợp, Thống kê (Output/Reporting):** \* Hiển thị kết luận cuối cùng trên màn hình Chatbot để định hướng người bệnh đến đúng chuyên khoa.
+* ### **Nghiệp vụ Tổng hợp, Thống kê (Output/Reporting):** \* Hiển thị kết luận cuối cùng trên màn hình Chatbot để gợi ý người bệnh đến đúng chuyên khoa.
 
   * ### Tự động sinh ra "Phiếu tóm tắt sàng lọc" đính kèm vào hồ sơ bệnh án điện tử để chuyển lên phòng khám chuyên khoa tương ứng.
 
-  * ### Hệ thống tổng hợp lưu lượng bệnh nhân được phân luồng về các chuyên khoa theo ngày/tháng để phục vụ công tác thống kê, báo cáo tình hình quá tải tại phòng khám.
+  * ### Hệ thống tổng hợp lưu lượng bệnh nhân được gợi ý về các chuyên khoa theo ngày/tháng để phục vụ công tác thống kê, báo cáo tình hình tại phòng khám.
 
 ## 3\. Lập danh sách các yêu cầu
 
@@ -70,10 +70,10 @@
 | :---: | :---- | :---: | :---- | :---- |
 | MOD-01  | Hệ tri thức Y khoa (Medical Knowledge Base)  | EP-01  | Quản trị Cây tri thức Y khoa (Ontology Management)  | Số hóa và cấu trúc hóa toàn bộ danh mục bệnh lý, triệu chứng lâm sàng thành một hệ sinh thái dữ liệu chuẩn mực, làm nền tảng cốt lõi cho AI học tập và suy diễn.  |
 |  |  | EP-02  | Cấu hình Động cơ Suy diễn (Inference Engine Setup)  | Trao quyền cho chuyên gia y tế thiết lập hệ thống luật (Rules), ma trận trọng số và các cờ cảnh báo rủi ro, đảm bảo mọi quyết định của AI đều minh bạch và tuân thủ chuẩn y khoa.  |
-| MOD-02  | Tương tác Sàng lọc (Triage Chatbot Engine)  | EP-03  | Khai thác Triệu chứng Tự nhiên (Natural Symptom Extraction)  | Ứng dụng NLP để tự động nhận diện, bóc tách và phân loại các dấu hiệu bất thường từ ngôn ngữ giao tiếp tự do của bệnh nhân theo thời gian thực.  |
-|  |  | EP-04  | Đánh giá Rủi ro & Gợi ý Lâm sàng (Clinical Routing)  | Tự động đối chiếu dữ kiện với hệ tri thức để tính toán điểm số bệnh lý, từ đó phát cảnh báo cấp cứu (nếu có) hoặc định tuyến bệnh nhân đến đúng chuyên khoa cần khám.  |
+| MOD-02  | Tương tác Sàng lọc (Chatbot Engine)  | EP-03  | Khai thác Triệu chứng Tự nhiên (Natural Symptom Extraction)  | Ứng dụng NLP để tự động nhận diện, bóc tách và phân loại các dấu hiệu bất thường từ ngôn ngữ giao tiếp tự do của bệnh nhân theo thời gian thực.  |
+|  |  | EP-04  | Suy diễn Bệnh lý \& Gợi ý Lâm sàng (Clinical Suggestion)  | Tự động đối chiếu dữ kiện với hệ tri thức để tính toán điểm số bệnh lý, từ đó gợi ý chuyên khoa phù hợp nhất cho bệnh nhân đi khám.  |
 |  |  | EP-05  | Kết xuất Báo cáo Hỗ trợ Quyết định (Decision Support Reporting)  | Đóng gói toàn bộ lịch sử hội thoại và kết quả suy diễn thành "Phiếu tóm tắt sàng lọc", giúp bác sĩ tiết kiệm thời gian khai thác bệnh sử và tăng độ chính xác khi thăm khám.  |
-| MOD-03  | Quản lý Định danh (Identity Management)  | EP-06  | Quản lý Truy cập & Phân quyền (Access Control)  | Quản lý vòng đời tài khoản của đa dạng người dùng (Admin, Bác sĩ, Bệnh nhân) và hỗ trợ chế độ Khách (Guest) để tối ưu hóa phễu trải nghiệm mà không gây rào cản đăng nhập.  |
+| MOD-03  | Quản lý Định danh (Identity Management)  | EP-06  | Quản lý Truy cập \& Phân quyền (Access Control)  | Quản lý vòng đời tài khoản của đa dạng người dùng (Admin, Bác sĩ, Bệnh nhân) và hỗ trợ chế độ Khách (Guest) để tối ưu hóa phễu trải nghiệm mà không gây rào cản đăng nhập.  |
 |  |  | EP-07  | Số hóa Tiền sử Y tế (Medical Profile Digitization)  | Thu thập và lưu trữ an toàn các chỉ số sinh tồn, tiền sử dị ứng, bệnh nền của bệnh nhân, biến chúng thành các tham số tĩnh để cá nhân hóa kết quả sàng lọc của AI.  |
 
 ### 
@@ -115,10 +115,9 @@
 | :---- | :---- | :---- | :---- |
 | **DOC-01** | **Đăng nhập Portal Y tế** | **Nhập Email/Username và Mật khẩu tại trang Đăng nhập nội bộ. Nhấn "Đăng nhập".** | **Nhận payload, truy vấn bảng** Staff\_Accounts**. So khớp giải mã Bcrypt. • Xử lý Token: Khởi tạo JWT Token chứa** staff\_id**,** role**, và** specialty\_id **(Mã khoa trực). • Trả về HTTP 200\. Frontend lưu token vào HttpOnly Cookie để bảo mật.** |
 | **DOC-02** | **Đăng xuất hệ thống** | **Nhấn avatar góc phải màn hình, chọn "Đăng xuất". Trở về màn hình đăng nhập.** | **Xóa Token ở phía Client. • Bảo mật: Đẩy** session\_token **hiện tại vào Blacklist (Redis) để vô hiệu hóa tức thì, chống tấn công Replay Attack.** |
-| **DOC-03** | **Theo dõi Ca chờ khám (Triage Queue)** | **Mở màn hình "Danh sách chờ". Xem các bệnh nhân đã được AI định tuyến về khoa của mình. • UI Ràng buộc: Các ca có dấu hiệu nguy kịch sẽ được bôi nền đỏ, ghim lên đầu danh sách kèm icon Cảnh báo.** | SELECT **bảng** Chat\_Sessions JOIN Patients**. • Điều kiện lọc (Filter):** WHERE suggested\_specialty\_id \= \[ID khoa của bác sĩ\] **AND** status \= 'completed'**. • Thuật toán sắp xếp (Sort): Ưu tiên** triage\_urgency \= 'emergency' **lên đầu, sau đó mới** ORDER BY end\_time DESC**. Phân trang 20 records/page.** |
-| **DOC-04** | **Xem chi tiết Báo cáo Sàng lọc** | **Click vào 1 ca bệnh cụ thể. Màn hình chia làm 2 phần tĩnh (Read-only): 1\. Bên trái: Thông tin cá nhân, Tiền sử dị ứng, Bệnh nền, Chỉ số sinh tồn. 2\. Bên phải: Phiếu tóm tắt gợi ý của AI và Lịch sử nguyên văn đoạn chat.** | **Lấy** session\_id **để query song song 4 luồng: 1\. Hồ sơ:** JOIN Patients **&** Medical\_Profiles**. 2\. Log chat: Truy xuất** Message\_Logs**. 3\. Kết quả chẩn đoán:** Session\_Disease\_Scores**. 4\. Phiếu tóm tắt:** Session\_Recommendations**.** |
-| **DOC-05** | **Xác nhận / Đánh giá AI (Feedback Loop)** | **Cuộn xuống cuối Phiếu kết quả. Bác sĩ đối chiếu với kết quả khám thực tế, sau đó nhấn chọn: • \[AI chẩn đoán Đúng\] • \[AI chẩn đoán Sai\] $\\rightarrow$ Chọn lại bệnh lý thực tế từ danh sách Dropdown.** | **Đây là lõi thu thập dữ liệu huấn luyện (Data Pipeline): • Nhận payload đánh giá.** UPDATE **bảng** Session\_Disease\_Scores**. • Bổ sung cờ** is\_doctor\_verified \= true/false **và** actual\_disease\_id **(nếu AI sai). Dữ liệu này lưu trữ làm Fact để tái huấn luyện trọng số cho model AI sau này.** |
-| **DOC-06** | **Kết xuất & In Phiếu bệnh án (Export PDF)** | **Nhấn icon máy in hoặc "Xuất PDF" góc phải màn hình để kẹp vào hồ sơ bệnh án giấy hoặc gửi qua hệ thống HIS của bệnh viện.** | **Backend render HTML template chứa dữ liệu** Medical\_Profiles **và** Session\_Recommendations**. • Sử dụng thư viện convert HTML to PDF (như Puppeteer) và trả file stream về cho trình duyệt tự động tải xuống.** |
+| **DOC-03** | **Xem chi tiết Báo cáo Sàng lọc** | **Click vào 1 ca bệnh cụ thể (thông qua tìm kiếm mã phiên hoặc danh sách). Màn hình chia làm 2 phần tĩnh (Read-only): 1\. Bên trái: Thông tin cá nhân, Tiền sử dị ứng, Bệnh nền, Chỉ số sinh tồn. 2\. Bên phải: Phiếu tóm tắt gợi ý của AI và Lịch sử nguyên văn đoạn chat.** | **Lấy** session\_id **để query song song 4 luồng: 1\. Hồ sơ:** JOIN Patients **&** Medical\_Profiles**. 2\. Log chat: Truy xuất** Message\_Logs**. 3\. Kết quả chẩn đoán:** Session\_Disease\_Scores**. 4\. Phiếu tóm tắt:** Session\_Recommendations**.** |
+| **DOC-04** | **Xác nhận / Đánh giá AI (Feedback Loop)** | **Cuộn xuống cuối Phiếu kết quả. Bác sĩ đối chiếu với kết quả khám thực tế, sau đó nhấn chọn: • \[AI chẩn đoán Đúng\] • \[AI chẩn đoán Sai\] $\\rightarrow$ Chọn lại bệnh lý thực tế từ danh sách Dropdown.** | **Đây là lõi thu thập dữ liệu huấn luyện (Data Pipeline): • Nhận payload đánh giá.** UPDATE **bảng** Session\_Disease\_Scores**. • Bổ sung cờ** is\_doctor\_verified \= true/false **và** actual\_disease\_id **(nếu AI sai). Dữ liệu này lưu trữ làm Fact để tái huấn luyện trọng số cho model AI sau này.** |
+| **DOC-05** | **Kết xuất & In Phiếu bệnh án (Export PDF)** | **Nhấn icon máy in hoặc "Xuất PDF" góc phải màn hình để kẹp vào hồ sơ bệnh án giấy hoặc gửi qua hệ thống HIS của bệnh viện.** | **Backend render HTML template chứa dữ liệu** Medical\_Profiles **và** Session\_Recommendations**. • Sử dụng thư viện convert HTML to PDF (như Puppeteer) và trả file stream về cho trình duyệt tự động tải xuống.** |
 
 ### 
 
@@ -127,7 +126,7 @@
 | Mã ID | Tên chức năng (Feature) | Thao tác của Chuyên gia Y tế trên UI (User Actions) | Xử lý ngầm của Hệ thống (Backend & Database) |
 | :---- | :---- | :---- | :---- |
 | **KMA-01** | **Quản lý danh mục Chuyên khoa** | Truy cập menu "Chuyên khoa". Xem danh sách. Nhấn \[Thêm mới\] hoặc \[Sửa\] để cập nhật: Mã khoa, Tên khoa, Mô tả. Nhấn \[Lưu\]. | Thực hiện CRUD trên bảng Specialties. • **Validate:** Mã code phải là duy nhất (Unique constraint). • Trả về HTTP 201 (Created) khi thêm mới thành công để UI tự động render lại danh sách. |
-| **KMA-02** | **Quản lý Triệu chứng & Từ đồng nghĩa** | Nhấn \[Thêm Triệu chứng\]. Nhập Tên chuẩn y khoa, Câu hỏi xác nhận cho AI (VD: "Bạn có kèm theo ho không?"). • Bật/tắt công tắc is\_red\_flag (Dấu hiệu nguy kịch). • Thêm các từ khóa địa phương vào mục "Từ đồng nghĩa". | 1\. INSERT/UPDATE bảng Symptoms. 2\. **Trigger NLP:** Tự động gọi API Embedding model biến Tên triệu chứng thành vector(1024) lưu vào cột embedding. 3\. INSERT mảng từ khóa vào bảng phụ Symptom\_Synonyms. (Bọc trong 1 Transaction SQL). |
+| **KMA-02** | **Quản lý Triệu chứng \& Từ đồng nghĩa** | Nhấn \[Thêm Triệu chứng\]. Nhập Tên chuẩn y khoa, Câu hỏi xác nhận cho AI (VD: "Bạn có kèm theo ho không?"). • Thêm các từ khóa địa phương vào mục "Từ đồng nghĩa". | 1\. INSERT/UPDATE bảng Symptoms. 2\. **Trigger NLP:** Tự động gọi API Embedding model biến Tên triệu chứng thành vector(1024) lưu vào cột embedding. 3\. INSERT mảng từ khóa vào bảng phụ Symptom\_Synonyms. (Bọc trong 1 Transaction SQL). |
 | **KMA-03** | **Quản lý danh mục Bệnh lý** | Truy cập "Bệnh lý". Nhấn \[Thêm mới\]. Nhập Tên bệnh, Mã ICD chuẩn, Mô tả. • Mở Dropdown chọn Chuyên khoa điều trị tương ứng. Nhấn \[Lưu\]. | Thực hiện CRUD bảng Diseases. • **Ràng buộc:** Bắt buộc có specialty\_id hợp lệ làm khóa ngoại (Foreign Key). • **Trigger NLP:** Tự động mã hóa văn bản mô tả thành mảng vector(1024) lưu vào Database để phục vụ RAG. |
 | **KMA-04** | **Thiết lập Cây Tri thức (Rules Engine)** | Chọn 1 Bệnh lý đích (VD: Sốt xuất huyết). Giao diện mở ra bảng điều khiển: • Thêm các Triệu chứng điều kiện. • Kéo thanh trượt để set Trọng số (Weight). • Checkbox chọn: "Bắt buộc phải có" hoặc "Triệu chứng loại trừ". | Xử lý mảng payload cực kỳ quan trọng: • INSERT/UPDATE vào bảng Knowledge\_Rules. • Ánh xạ chính xác các trường: disease\_id, symptom\_id, weight (Float), cờ is\_mandatory (Boolean), và cờ is\_exclusion (Boolean). |
 | **KMA-05** | **Sandbox Kiểm thử AI nội bộ** | Truy cập màn hình "Giả lập Chat". Đóng vai bệnh nhân nhập text để test thử xem bộ Luật chẩn đoán vừa thiết lập ở KMA-04 có tính toán ra đúng chuyên khoa mong muốn hay không. | Khởi tạo một phiên Chat ảo (Mock Session). • Chạy luồng bóc tách NER và Động cơ suy diễn (Inference Engine) để trả kết quả ra màn hình. • **Ràng buộc:** Tuyệt đối không lưu lịch sử đoạn chat này vào bảng Chat\_Sessions để tránh làm bẩn dữ liệu khám thật. |
@@ -150,7 +149,7 @@
 | **RAG-01** | **Xem danh sách dữ liệu tri thức (RAG)** | Truy cập menu "Kho tri thức AI". Xem danh sách các đoạn văn bản (Sách y khoa, bài báo) đã nạp. Lọc theo Phân loại nguồn. | SELECT từ bảng Knowledge\_Chunks. • Trả về id, source\_type, source\_id, và trích xuất một phần chunk\_text. • **Ràng buộc:** Phân trang bắt buộc bằng Limit/Offset (50 chunks/trang) để tránh quá tải RAM. |
 | **RAG-02** | **Nạp dữ liệu tri thức mới (RAG Ingestion)** | Nhập nội dung kiến thức y khoa vào ô Textarea, chọn Loại nguồn gốc và bấm "Nạp cho AI". Chờ thanh tiến trình (Loading bar) chạy xong. | 1\. Nhận chuỗi chunk\_text từ Frontend. 2\. Gọi API của Embedding Model (VD: BAAI/bge-m3) để mã hóa văn bản thành mảng số thực. 3\. INSERT dữ liệu vào bảng Knowledge\_Chunks với trường embedding là mảng vector(1024). |
 | **RAG-03** | **Cập nhật / Xóa dữ liệu RAG** | Mở một đoạn tri thức bị lỗi thời để sửa lại chữ, hoặc bấm nút \[Thùng rác\] để xóa vĩnh viễn khỏi bộ não AI. | • **Khi Cập nhật:** Bắt buộc gọi lại API Embedding Model để sinh Vector mới, sau đó UPDATE chunk\_text và embedding để đảm bảo đồng bộ. • **Khi Xóa:** Thực hiện lệnh DELETE vật lý hoặc gán cờ is\_deleted \= true. |
-| **SYS-01** | **Xem Bảng điều khiển (System Dashboard)** | Mở màn hình Tổng quan. Chọn mốc thời gian (Tuần/Tháng). Xem biểu đồ: Tổng số phiên chat, Tỷ lệ cảnh báo khẩn cấp, Top Chuyên khoa. | Chạy các hàm Aggregation SQL: • COUNT(id) từ Chat\_Sessions theo created\_at. • Lọc COUNT theo điều kiện triage\_urgency \= 'emergency'. • GROUP BY suggested\_specialty\_id kết hợp phép JOIN với bảng Specialties để vẽ biểu đồ tròn (Pie chart). |
+| **SYS-01** | **Xem Bảng điều khiển (System Dashboard)** | Mở màn hình Tổng quan. Chọn mốc thời gian (Tuần/Tháng). Xem biểu đồ: Tổng số phiên chat, Top Chuyên khoa được gợi ý. | Chạy các hàm Aggregation SQL: • COUNT(id) từ Chat\_Sessions theo created\_at. • GROUP BY suggested\_specialty\_id kết hợp phép JOIN với bảng Specialties để vẽ biểu đồ cột (Bar chart). |
 | **SYS-02** | **Theo dõi Log & Gỡ lỗi (Debug AI)** | Truy cập menu "AI Debug". Click vào một phiên chat bị phàn nàn là chẩn đoán sai. Đọc đoạn text gốc của user và file JSON kỹ thuật mà LLM nhả về. | SELECT từ bảng Message\_Logs. • Frontend parsing trường metadata (đang lưu dưới dạng kiểu jsonb) để bung ra các dữ liệu thô (Raw LLM output, trích xuất NER bị sai lệch). Phục vụ IT báo cáo tinh chỉnh Symptom\_Synonyms. |
 | **SYS-03** | **Cấu hình tham số hệ thống AI** | Mở bảng Cài đặt. Điều chỉnh các thanh trượt: Ngưỡng độ tin cậy bóc tách (Confidence Threshold, VD: 0.8), Thời gian timeout của phiên chat. Bấm Lưu. | Nhận payload cấu hình. UPDATE vào bảng cấu hình hệ thống (hoặc cập nhật biến môi trường/Redis). • Restart ngầm các worker/service liên quan để áp dụng ngưỡng confidence mới cho hệ thống. |
 
@@ -158,7 +157,7 @@
 
 **Phạm vi trong (In-scope):**
 
-* Khảo sát hiện trạng quy trình phân luồng chuyên khoa thủ công tại phòng khám.  
+* Khảo sát hiện trạng quy trình tư vấn y tế ban đầu tại phòng khám.  
 * Xây dựng mô hình yêu cầu chức năng (functional requirements) cho hệ thống Chatbot.  
 * Tập trung hoàn toàn vào **Khai phá dữ liệu văn bản (NLP)** và **Hệ chuyên gia (Expert System)**.  
 * Thiết kế Cây tri thức Y khoa (Ontology), quy tắc suy diễn (Inference Rules), trọng số triệu chứng (weight), luật bắt buộc (is\_mandatory) và luật loại trừ (is\_exclusion).  

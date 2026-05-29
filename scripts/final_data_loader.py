@@ -57,13 +57,11 @@ def load_all_data():
         eng_name = str(row['English_Name']).strip()
         vn_name = str(row['Vietnamese_Name']).strip()
         sev_row = df_severity[df_severity['Symptom'] == eng_name]
-        # Ngưỡng cờ đỏ: Các triệu chứng có điểm nguy hiểm từ 6 trở lên (thang 1-7)
-        is_red = int(sev_row['weight'].values[0]) >= 4 if not sev_row.empty else False
         embedding = embeddings[i].tolist()
-        sym_data.append((eng_name.upper(), vn_name, f"Bạn có bị {vn_name.lower()} không?", is_red, embedding))
+        sym_data.append((eng_name.upper(), vn_name, f"Bạn có bị {vn_name.lower()} không?", embedding))
 
     execute_values(cur, """
-        INSERT INTO Symptoms (code, name, question_text, is_red_flag, embedding) 
+        INSERT INTO Symptoms (code, name, question_text, embedding) 
         VALUES %s
     """, sym_data)
 

@@ -341,8 +341,8 @@ def get_patient_sessions():
 # DOCTOR API
 # ════════════════════════════════════════════
 
-@app.route('/api/doctor/queue', methods=['GET'])
-def doctor_queue():
+@app.route('/api/doctor/history', methods=['GET'])
+def doctor_history():
     if session.get('user_type') not in ('doctor', 'admin'):
         return jsonify({"error": "Không có quyền"}), 403
     specialty_id = session.get('specialty_id')
@@ -364,7 +364,7 @@ def doctor_queue():
             if specialty_id:
                 query += " AND cs.suggested_specialty_id = %s"
                 params.append(specialty_id)
-            query += " ORDER BY CASE WHEN cs.triage_urgency='emergency' THEN 0 ELSE 1 END, cs.end_time DESC LIMIT 50"
+            query += " ORDER BY cs.end_time DESC LIMIT 50"
             cur.execute(query, params)
             rows = cur.fetchall()
 
@@ -377,7 +377,7 @@ def doctor_queue():
             if item.get('end_time'):
                 item['end_time'] = item['end_time'].isoformat()
             result.append(item)
-        return jsonify({"queue": result})
+        return jsonify({"history": result})
     except Exception as e:
         print(f"Lỗi hệ thống: {e}")
         return jsonify({"error": "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau."}), 500
@@ -526,7 +526,7 @@ def list_symptoms():
     try:
         conn = get_db()
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("SELECT id, code, name, question_text, is_red_flag FROM Symptoms ORDER BY name")
+            cur.execute("SELECT id, code, name, question_text FROM Symptoms ORDER BY name")
             rows = cur.fetchall()
         conn.close()
         return jsonify({"symptoms": [dict(r) for r in rows]})
@@ -538,12 +538,12 @@ def add_symptom():
     if session.get('user_type') not in ('admin', 'knowledge_admin'): return jsonify({"error": "Forbidden"}), 403
     data = request.json
     try:
-        embedding = engine.get_embedding(data['name'])
+        embedding = str(engine.get_embedding(data['name']).tolist())
         conn = get_db()
         with conn.cursor() as cur:
-            cur.execute("""INSERT INTO Symptoms (code, name, question_text, is_red_flag, embedding) 
-                           VALUES (%s, %s, %s, %s, %s) RETURNING id""",
-                        (data['code'], data['name'], data.get('question_text', ''), data.get('is_red_flag', False), embedding))
+            cur.execute("""INSERT INTO Symptoms (code, name, question_text, embedding) 
+                           VALUES (%s, %s, %s, %s) RETURNING id""",
+                        (data['code'], data['name'], data.get('question_text', ''), embedding))
             new_id = cur.fetchone()[0]
         conn.commit()
         conn.close()
@@ -561,9 +561,9 @@ def edit_symptom(sid):
                 cur.execute("DELETE FROM Symptoms WHERE id = %s", (sid,))
             else:
                 data = request.json
-                embedding = engine.get_embedding(data['name'])
-                cur.execute("""UPDATE Symptoms SET name = %s, question_text = %s, is_red_flag = %s, embedding = %s, updated_at = CURRENT_TIMESTAMP 
-                               WHERE id = %s""", (data['name'], data.get('question_text', ''), data.get('is_red_flag', False), embedding, sid))
+                embedding = str(engine.get_embedding(data['name']).tolist())
+                cur.execute("""UPDATE Symptoms SET name = %s, question_text = %s, embedding = %s, updated_at = CURRENT_TIMESTAMP 
+                               WHERE id = %s""", (data['name'], data.get('question_text', ''), embedding, sid))
         conn.commit()
         conn.close()
         return jsonify({"message": "OK"})
@@ -773,6 +773,177 @@ def sandbox_chat():
         chat_sess.state = 'finished'
         del active_chats[mock_id]
         return jsonify({"status": "finished", "messages": [{"text": "Hoàn tất kiểm thử (hết câu hỏi).", "type": "result"}]})
+
+
+# ════════════════════════════════════════════
+# SYSTEM ADMIN API — Staff, RAG, Configs, Logs
+# ════════════════════════════════════════════
+
+@app.route('/api/admin/staff', methods=['GET'])
+def get_staff():
+    if session.get('user_type') != 'admin': return jsonify({"error": "Forbidden"}), 403
+    try:
+        conn = get_db()
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT sa.id, sa.username, sa.email, sa.full_name, sa.role, sa.is_active, sa.created_at, s.name as specialty_name 
+                FROM Staff_Accounts sa
+                LEFT JOIN Specialties s ON sa.specialty_id = s.id
+                ORDER BY sa.id DESC
+            """)
+            staff = cur.fetchall()
+        conn.close()
+        return jsonify(staff)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/staff', methods=['POST'])
+def create_staff():
+    if session.get('user_type') != 'admin': return jsonify({"error": "Forbidden"}), 403
+    data = request.json
+    try:
+        pw_hash = bcrypt.hashpw(data['password'].encode(), bcrypt.gensalt()).decode()
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO Staff_Accounts (username, email, full_name, password_hash, role, specialty_id)
+                VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
+            """, (data['username'], data.get('email'), data['full_name'], pw_hash, data['role'], data.get('specialty_id') or None))
+            new_id = cur.fetchone()[0]
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "id": new_id})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/staff/<int:uid>', methods=['PUT', 'DELETE'])
+def manage_staff(uid):
+    if session.get('user_type') != 'admin': return jsonify({"error": "Forbidden"}), 403
+    
+    if session.get('user_id') == uid and request.method == 'DELETE':
+        return jsonify({"error": "Không thể tự khóa tài khoản của chính mình."}), 403
+
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            if request.method == 'DELETE':
+                cur.execute("UPDATE Staff_Accounts SET is_active = false WHERE id = %s", (uid,))
+            else:
+                data = request.json
+                if 'is_active' in data:
+                    cur.execute("UPDATE Staff_Accounts SET is_active = %s WHERE id = %s", (data['is_active'], uid))
+                else:
+                    cur.execute("""
+                        UPDATE Staff_Accounts SET email=%s, full_name=%s, role=%s, specialty_id=%s
+                        WHERE id = %s
+                    """, (data.get('email'), data['full_name'], data['role'], data.get('specialty_id') or None, uid))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/knowledge_chunks', methods=['GET'])
+def get_knowledge_chunks():
+    if session.get('user_type') not in ('admin', 'knowledge_admin'): return jsonify({"error": "Forbidden"}), 403
+    try:
+        conn = get_db()
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("SELECT id, source_type, source_id, chunk_text, mapped_symptoms, created_at FROM Knowledge_Chunks ORDER BY id DESC LIMIT 100")
+            chunks = cur.fetchall()
+        conn.close()
+        return jsonify(chunks)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/knowledge_chunks', methods=['POST'])
+def create_knowledge_chunk():
+    if session.get('user_type') not in ('admin', 'knowledge_admin'): return jsonify({"error": "Forbidden"}), 403
+    data = request.json
+    try:
+        # Generate Vector Embedding using engine's embedding_model
+        text_to_encode = data['chunk_text']
+        embedding = str(engine.embedding_model.encode(text_to_encode).tolist())
+        
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO Knowledge_Chunks (source_type, source_id, chunk_text, mapped_symptoms, embedding)
+                VALUES (%s, %s, %s, %s, %s) RETURNING id
+            """, (data['source_type'], data.get('source_id') or None, data['chunk_text'], data.get('mapped_symptoms'), embedding))
+            new_id = cur.fetchone()[0]
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "id": new_id})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/knowledge_chunks/<int:cid>', methods=['PUT', 'DELETE'])
+def manage_knowledge_chunk(cid):
+    if session.get('user_type') not in ('admin', 'knowledge_admin'): return jsonify({"error": "Forbidden"}), 403
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            if request.method == 'DELETE':
+                cur.execute("DELETE FROM Knowledge_Chunks WHERE id = %s", (cid,))
+            else:
+                data = request.json
+                text_to_encode = data['chunk_text']
+                embedding = str(engine.embedding_model.encode(text_to_encode).tolist())
+                cur.execute("""
+                    UPDATE Knowledge_Chunks 
+                    SET source_type=%s, source_id=%s, chunk_text=%s, mapped_symptoms=%s, embedding=%s
+                    WHERE id = %s
+                """, (data['source_type'], data.get('source_id') or None, data['chunk_text'], data.get('mapped_symptoms'), embedding, cid))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/system_configs', methods=['GET', 'POST'])
+def system_configs():
+    if session.get('user_type') != 'admin': return jsonify({"error": "Forbidden"}), 403
+    try:
+        conn = get_db()
+        if request.method == 'POST':
+            data = request.json
+            with conn.cursor() as cur:
+                for key, val in data.items():
+                    cur.execute("""
+                        INSERT INTO System_Configs (config_key, config_value, updated_by)
+                        VALUES (%s, %s, %s)
+                        ON CONFLICT (config_key) 
+                        DO UPDATE SET config_value = EXCLUDED.config_value, updated_by = EXCLUDED.updated_by, updated_at = CURRENT_TIMESTAMP
+                    """, (key, str(val), session.get('user_id')))
+            conn.commit()
+            conn.close()
+            return jsonify({"success": True})
+        else:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("SELECT * FROM System_Configs")
+                configs = cur.fetchall()
+            conn.close()
+            return jsonify(configs)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/message_logs', methods=['GET'])
+def get_message_logs():
+    if session.get('user_type') != 'admin': return jsonify({"error": "Forbidden"}), 403
+    try:
+        conn = get_db()
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT id, session_id, sender_type, message_text, metadata, created_at
+                FROM Message_Logs
+                ORDER BY created_at DESC LIMIT 100
+            """)
+            logs = cur.fetchall()
+        conn.close()
+        return jsonify(logs)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # ════════════════════════════════════════════

@@ -126,10 +126,6 @@ class ChatbotSession:
         # Lưu triệu chứng đã xác nhận
         self._add_confirmed_symptoms(extracted)
 
-        # Kiểm tra Red Flag
-        red_flags = self._check_red_flags()
-        if red_flags:
-            return self._handle_red_flag(red_flags)
 
         # Tạo phản hồi xác nhận + hỏi thêm
         return self._build_followup_response(extracted)
@@ -153,10 +149,6 @@ class ChatbotSession:
                         "Bạn có thể mô tả cụ thể hơn không?"
             }]
 
-        # Check red flags
-        red_flags = self._check_red_flags()
-        if red_flags:
-            return self._handle_red_flag(red_flags)
 
         return self._build_followup_response(new_symptoms)
 
@@ -203,10 +195,6 @@ class ChatbotSession:
                 # Không đề cập triệu chứng đang hỏi → coi như unsure
                 self.unsure_symptom_ids.add(pending['symptom_id'])
 
-        # Kiểm tra red flags sau mỗi cập nhật
-        red_flags = self._check_red_flags()
-        if red_flags:
-            return self._handle_red_flag(red_flags)
 
         # Tiếp tục hỏi hoặc kết luận
         return self._decide_next_step()
@@ -422,36 +410,7 @@ class ChatbotSession:
             source="llm_extract"
         )
 
-    def _check_red_flags(self):
-        """Kiểm tra triệu chứng cờ đỏ."""
-        ids = list(self.confirmed_symptoms.keys())
-        if not ids:
-            return []
-        return self.engine.check_red_flags(ids)
 
-    def _handle_red_flag(self, red_flags):
-        """Xử lý cảnh báo cờ đỏ → kết thúc phiên ngay."""
-        self.phase = "finished"
-        flag_names = [rf['name'] for rf in red_flags]
-        confirmed_names = [s['name'] for s in self.confirmed_symptoms.values()]
-
-        msg = (
-            "🚨 **CẢNH BÁO KHẨN CẤP** 🚨\n\n"
-            f"Phát hiện dấu hiệu nguy kịch: **{', '.join(flag_names)}**\n\n"
-            "**⚡ Bạn cần đến cơ sở y tế gần nhất NGAY LẬP TỨC hoặc gọi 115.**\n\n"
-            "Đây là tình huống cần can thiệp y tế khẩn cấp. "
-            "Vui lòng không tự chữa trị tại nhà."
-        )
-
-        self._save_result(None, "emergency", msg, [])
-
-        self.diagnosis_result = {
-            'urgency': 'emergency',
-            'red_flags': flag_names,
-            'confirmed_symptoms': confirmed_names,
-        }
-
-        return [{"role": "bot", "text": msg, "type": "emergency"}]
 
     def _get_symptom_names(self, symptom_ids: set):
         """Lấy tên triệu chứng từ IDs."""

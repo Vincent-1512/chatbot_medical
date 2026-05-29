@@ -103,13 +103,9 @@ if __name__ == "__main__":
     sym_ids = [s['id'] for s in extracted]
     print(f"   -> IDs: {sym_ids}")
 
-    red_flags = engine.check_red_flags(sym_ids)
-    if red_flags:
-        print("\n🚨 CỜ ĐỎ!")
-    else:
-        results = engine.diagnose(sym_ids)
-        print("\n--- KẾT QUẢ ---")
-        for rank, row in enumerate(results[:3], 1):
-            print(f"Top {rank}: {row['disease_name']} ({row['specialty_name']}) — Score: {row['rule_score']:.2f}")
+    results = engine.diagnose(sym_ids)
+    print("\n--- KẾT QUẢ ---")
+    for rank, row in enumerate(results[:3], 1):
+        print(f"Top {rank}: {row['disease_name']} ({row['specialty_name']}) — Score: {row['rule_score']:.2f}")
 
     engine.close()

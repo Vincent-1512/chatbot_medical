@@ -223,6 +223,10 @@ function showPage(page) {
     else if (page === 'history') loadHistory();
     else if (page === 'doctor-queue') loadDoctorQueue();
     else if (page === 'admin-dashboard') loadAdminDashboard();
+    else if (page === 'admin-staff') loadAdminStaff();
+    else if (page === 'admin-rag') loadAdminRag();
+    else if (page === 'admin-config') loadAdminConfig();
+    else if (page === 'admin-debug') loadAdminDebug();
 
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -579,18 +583,18 @@ let currentDoctorSessionId = null;
 
 async function loadDoctorQueue() {
     try {
-        const res = await fetch(API + '/api/doctor/queue', { credentials: 'include' });
+        const res = await fetch(API + '/api/doctor/history', { credentials: 'include' });
         const data = await res.json();
-        const queue = data.queue || [];
+        const queue = data.history || [];
 
         const tbody = document.getElementById('doctor-queue-body');
         if (queue.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:40px;">Không có ca chờ khám</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:40px;">Không có ca tư vấn nào</td></tr>';
             return;
         }
 
         tbody.innerHTML = queue.map(q => `
-            <tr class="${q.triage_urgency === 'emergency' ? 'emergency' : ''}" style="cursor:pointer;" onclick="viewDoctorSession(${q.id})">
+            <tr style="cursor:pointer;" onclick="viewDoctorSession(${q.id})">
                 <td><strong>#${q.id}</strong></td>
                 <td>${escapeHtml(q.patient_name || '')}</td>
                 <td><span class="badge badge-info">${escapeHtml(q.specialty_name || 'N/A')}</span></td>
@@ -600,7 +604,7 @@ async function loadDoctorQueue() {
             </tr>
         `).join('');
     } catch (e) {
-        console.error('Load queue error:', e);
+        console.error('Load history error:', e);
     }
 }
 
@@ -638,6 +642,41 @@ async function viewDoctorSession(sessionId) {
         } else {
             diseasesEl.innerHTML = '<p style="color:var(--text-muted);">Không có dữ liệu</p>';
         }
+        // Symptoms
+        const symptomsEl = document.getElementById('doc-symptoms');
+        if (data.symptoms && data.symptoms.length > 0) {
+            symptomsEl.innerHTML = `
+                <table style="width:100%; border-collapse: collapse; font-size:0.9rem;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid var(--border); text-align: left;">
+                            <th style="padding: 8px;">Triệu chứng</th>
+                            <th style="padding: 8px;">Mã</th>
+                            <th style="padding: 8px;">Trạng thái</th>
+                            <th style="padding: 8px;">Độ tin cậy</th>
+                            <th style="padding: 8px;">Nguồn</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.symptoms.map(s => `
+                            <tr style="border-bottom: 1px solid var(--border);">
+                                <td style="padding: 8px;">${escapeHtml(s.name)}</td>
+                                <td style="padding: 8px; color: var(--text-muted);">${escapeHtml(s.code)}</td>
+                                <td style="padding: 8px;">
+                                    <span class="badge ${s.is_present ? 'badge-danger' : 'badge-success'}">
+                                        ${s.is_present ? 'Có' : 'Không'}
+                                    </span>
+                                </td>
+                                <td style="padding: 8px;">${(s.confidence * 100).toFixed(0)}%</td>
+                                <td style="padding: 8px;">${escapeHtml(s.source || 'N/A')}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        } else {
+            symptomsEl.innerHTML = '<p style="color:var(--text-muted);">Không có dữ liệu triệu chứng</p>';
+        }
+
 
         // Recommendation
         document.getElementById('doc-recommendation').innerHTML = formatBotText(data.recommendation || 'Không có');
@@ -690,6 +729,38 @@ function submitCorrection() {
         alert('✅ Đã ghi nhận đánh giá. Cảm ơn bác sĩ!');
         document.getElementById('verify-correction').classList.add('hidden');
     });
+}
+
+window.exportReport = function() {
+    if (!currentDoctorSessionId) return;
+
+    const patientInfo = document.getElementById('doc-patient-info').innerText;
+    const aiResults = document.getElementById('doc-diseases').innerText;
+    const recommendation = document.getElementById('doc-recommendation').innerText;
+    const symptomsInfo = document.getElementById('doc-symptoms').innerText;
+    
+    let reportContent = `BÁO CÁO SÀNG LỌC BỆNH NHÂN\n`;
+    reportContent += `Mã phiên: #${currentDoctorSessionId}\n`;
+    reportContent += `Ngày xuất báo cáo: ${new Date().toLocaleString('vi-VN')}\n`;
+    reportContent += `=====================================\n\n`;
+    
+    reportContent += `[THÔNG TIN BỆNH NHÂN]\n${patientInfo}\n\n`;
+    reportContent += `[TRIỆU CHỨNG ĐÃ BÓC TÁCH]\n${symptomsInfo}\n\n`;
+    reportContent += `[KẾT QUẢ AI DỰ ĐOÁN]\n${aiResults}\n\n`;
+    reportContent += `[AI GỢI Ý KHÁM]\n${recommendation}\n\n`;
+    reportContent += `[ĐÁNH GIÁ CỦA BÁC SĨ]\n`;
+    reportContent += `....................................................................\n\n`;
+    reportContent += `Chữ ký Bác sĩ:\n`;
+
+    const blob = new Blob([reportContent], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Bao_cao_sang_loc_session_${currentDoctorSessionId}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 // ════════════════════════════════════════════
@@ -773,24 +844,31 @@ async function showAdminTab(tab) {
             const res = await fetch(API + '/api/admin/specialties', { credentials: 'include' });
             const data = await res.json();
             headEl.innerHTML = '<tr><th>ID</th><th>Mã</th><th>Tên chuyên khoa</th><th>Mô tả</th><th>Thao tác</th></tr>';
+            window.adminDataCache = window.adminDataCache || {};
+            window.adminDataCache['specialties'] = {};
+            (data.specialties || []).forEach(s => window.adminDataCache['specialties'][s.id] = s);
+
             bodyEl.innerHTML = (data.specialties || []).map(s => `
                 <tr><td>${s.id}</td><td><code>${escapeHtml(s.code)}</code></td><td><strong>${escapeHtml(s.name)}</strong></td><td>${escapeHtml(s.description || '')}</td>
-                <td><button class="btn btn-outline" style="padding:4px 8px;font-size:0.8rem;" onclick='openCrudModal("specialties", ${JSON.stringify(s)})'>Sửa</button>
+                <td><button class="btn btn-outline" style="padding:4px 8px;font-size:0.8rem;" onclick="openCrudModal('specialties', ${s.id})">Sửa</button>
                 <button class="btn btn-danger" style="padding:4px 8px;font-size:0.8rem;" onclick="deleteRecord('specialties', ${s.id})">Xóa</button></td></tr>
             `).join('');
         } else if (tab === 'symptoms') {
             titleEl.textContent = '🩺 Danh mục Triệu chứng';
             const res = await fetch(API + '/api/admin/symptoms', { credentials: 'include' });
             const data = await res.json();
-            headEl.innerHTML = '<tr><th>ID</th><th>Mã</th><th>Tên</th><th>Câu hỏi AI</th><th>Red Flag</th><th>Thao tác</th></tr>';
+            headEl.innerHTML = '<tr><th>ID</th><th>Mã</th><th>Tên</th><th>Câu hỏi AI</th><th>Thao tác</th></tr>';
+            window.adminDataCache = window.adminDataCache || {};
+            window.adminDataCache['symptoms'] = {};
+            (data.symptoms || []).forEach(s => window.adminDataCache['symptoms'][s.id] = s);
+
             bodyEl.innerHTML = (data.symptoms || []).map(s => `
                 <tr>
                     <td>${s.id}</td>
                     <td><code>${escapeHtml(s.code)}</code></td>
                     <td>${escapeHtml(s.name)}</td>
                     <td style="max-width:200px;">${escapeHtml(s.question_text || '')}</td>
-                    <td>${s.is_red_flag ? '<span class="badge badge-danger">🚩 Cờ đỏ</span>' : '<span class="badge badge-neutral">Bình thường</span>'}</td>
-                    <td><button class="btn btn-outline" style="padding:4px 8px;font-size:0.8rem;" onclick='openCrudModal("symptoms", ${JSON.stringify(s)})'>Sửa</button>
+                    <td><button class="btn btn-outline" style="padding:4px 8px;font-size:0.8rem;" onclick="openCrudModal('symptoms', ${s.id})">Sửa</button>
                     <button class="btn btn-danger" style="padding:4px 8px;font-size:0.8rem;" onclick="deleteRecord('symptoms', ${s.id})">Xóa</button></td>
                 </tr>
             `).join('');
@@ -799,6 +877,10 @@ async function showAdminTab(tab) {
             const res = await fetch(API + '/api/admin/diseases', { credentials: 'include' });
             const data = await res.json();
             headEl.innerHTML = '<tr><th>ID</th><th>ICD</th><th>Tên bệnh</th><th>Chuyên khoa</th><th>Thao tác</th></tr>';
+            window.adminDataCache = window.adminDataCache || {};
+            window.adminDataCache['diseases'] = {};
+            (data.diseases || []).forEach(d => window.adminDataCache['diseases'][d.id] = d);
+
             bodyEl.innerHTML = (data.diseases || []).map(d => `
                 <tr>
                     <td>${d.id}</td>
@@ -807,7 +889,7 @@ async function showAdminTab(tab) {
                     <td><span class="badge badge-info">${escapeHtml(d.specialty_name)}</span></td>
                     <td style="white-space:nowrap;">
                         <button class="btn btn-primary" style="padding:4px 8px;font-size:0.8rem;" onclick="openRulesModal(${d.id}, '${escapeHtml(d.name)}')">Luật</button>
-                        <button class="btn btn-outline" style="padding:4px 8px;font-size:0.8rem;" onclick='openCrudModal("diseases", ${JSON.stringify(d)})'>Sửa</button>
+                        <button class="btn btn-outline" style="padding:4px 8px;font-size:0.8rem;" onclick="openCrudModal('diseases', ${d.id})">Sửa</button>
                         <button class="btn btn-danger" style="padding:4px 8px;font-size:0.8rem;" onclick="deleteRecord('diseases', ${d.id})">Xóa</button>
                     </td>
                 </tr>
@@ -824,7 +906,12 @@ async function showAdminTab(tab) {
 let currentCrudTab = '';
 let currentCrudId = null;
 
-async function openCrudModal(tab, data = null) {
+async function openCrudModal(tab, dataId = null) {
+    let data = null;
+    if (dataId !== null && window.adminDataCache && window.adminDataCache[tab]) {
+        data = window.adminDataCache[tab][dataId];
+    }
+    
     currentCrudTab = tab;
     currentCrudId = data ? data.id : null;
     const modal = document.getElementById('crud-modal');
@@ -845,7 +932,6 @@ async function openCrudModal(tab, data = null) {
             <div class="form-group"><label>Mã triệu chứng</label><input type="text" id="crud-code" value="${data?escapeHtml(data.code):''}" ${data?'disabled':''}></div>
             <div class="form-group"><label>Tên chuẩn y khoa</label><input type="text" id="crud-name" value="${data?escapeHtml(data.name):''}"></div>
             <div class="form-group"><label>Câu hỏi xác nhận AI</label><input type="text" id="crud-question" value="${data?escapeHtml(data.question_text||''):''}"></div>
-            <div class="form-group"><label><input type="checkbox" id="crud-redflag" ${data&&data.is_red_flag?'checked':''}> Là dấu hiệu nguy kịch (Red Flag)</label></div>
         `;
     } else if(tab === 'diseases') {
         // fetch specialties for select
@@ -862,17 +948,17 @@ async function openCrudModal(tab, data = null) {
     }
     
     body.innerHTML = html;
-    modal.style.display = 'flex';
+    modal.classList.add('active');
 }
 
-function closeCrudModal() { document.getElementById('crud-modal').style.display = 'none'; }
+function closeCrudModal() { document.getElementById('crud-modal').classList.remove('active'); }
 
 async function saveCrudData() {
     let payload = {};
     if(currentCrudTab === 'specialties') {
         payload = { code: document.getElementById('crud-code').value, name: document.getElementById('crud-name').value, description: document.getElementById('crud-desc').value };
     } else if(currentCrudTab === 'symptoms') {
-        payload = { code: document.getElementById('crud-code').value, name: document.getElementById('crud-name').value, question_text: document.getElementById('crud-question').value, is_red_flag: document.getElementById('crud-redflag').checked };
+        payload = { code: document.getElementById('crud-code').value, name: document.getElementById('crud-name').value, question_text: document.getElementById('crud-question').value };
     } else if(currentCrudTab === 'diseases') {
         payload = { icd_code: document.getElementById('crud-icd').value, name: document.getElementById('crud-name').value, description: document.getElementById('crud-desc').value, specialty_id: parseInt(document.getElementById('crud-spec').value) };
     }
@@ -908,7 +994,7 @@ let currentRulesDiseaseId = null;
 async function openRulesModal(diseaseId, diseaseName) {
     currentRulesDiseaseId = diseaseId;
     document.getElementById('rules-disease-name').textContent = diseaseName;
-    document.getElementById('rules-modal').style.display = 'flex';
+    document.getElementById('rules-modal').classList.add('active');
     document.getElementById('rules-table-body').innerHTML = '<tr><td colspan="5">Đang tải...</td></tr>';
     
     try {
@@ -928,7 +1014,7 @@ async function openRulesModal(diseaseId, diseaseName) {
     }
 }
 
-function closeRulesModal() { document.getElementById('rules-modal').style.display = 'none'; }
+function closeRulesModal() { document.getElementById('rules-modal').classList.remove('active'); }
 
 function appendRuleRow(symptomId, symptomName, weight, isMandatory, isExclusion) {
     const tbody = document.getElementById('rules-table-body');
@@ -1102,3 +1188,350 @@ function urgencyLabel(urgency) {
     if (urgency === 'high') return '⚡ Ưu tiên';
     return '✅ Bình thường';
 }
+
+
+// ════════════════════════════════════════════
+// SYSTEM ADMIN - STAFF ACCOUNTS
+// ════════════════════════════════════════════
+
+function loadAdminStaff() {
+    fetch('/api/admin/staff')
+        .then(res => res.json())
+        .then(staffData => {
+            window.adminDataCache = window.adminDataCache || {};
+            window.adminDataCache['staff'] = {};
+            (staffData.staff || []).forEach(s => window.adminDataCache['staff'][s.id] = s);
+
+            const tbody = document.getElementById('staff-table-body');
+            tbody.innerHTML = (staffData.staff || []).map(s => `
+                <tr>
+                    <td>${s.id}</td>
+                    <td><strong>${escapeHtml(s.username)}</strong></td>
+                    <td>${escapeHtml(s.full_name)}</td>
+                    <td><span class="badge ${s.role === 'admin' ? 'badge-danger' : 'badge-primary'}">${s.role}</span></td>
+                    <td>${s.specialty_name || '-'}</td>
+                    <td><span class="badge ${s.is_active ? 'badge-success' : 'badge-warning'}">${s.is_active ? 'Hoạt động' : 'Đã khóa'}</span></td>
+                    <td>
+                        <button class="btn btn-primary" style="padding:4px 8px; font-size:12px" onclick="editStaff(${s.id})">Sửa</button>
+                        <button class="btn ${s.is_active ? 'btn-danger' : 'btn-success'}" style="padding:4px 8px; font-size:12px" onclick="toggleStaffActive(${s.id}, ${!s.is_active})">${s.is_active ? 'Khóa' : 'Mở'}</button>
+                    </td>
+                </tr>
+            `).join('');
+        });
+}
+
+function openStaffModal() {
+    document.getElementById('staff-id').value = '';
+    document.getElementById('staff-username').value = '';
+    document.getElementById('staff-username').disabled = false;
+    document.getElementById('staff-fullname').value = '';
+    document.getElementById('staff-password-group').style.display = 'block';
+    document.getElementById('staff-role').value = 'doctor';
+    document.getElementById('staff-active-group').style.display = 'none';
+    
+    // Load specialties
+    fetch('/api/admin/specialties')
+        .then(res => res.json())
+        .then(data => {
+            const sel = document.getElementById('staff-specialty');
+            sel.innerHTML = '<option value="">-- Không chọn --</option>';
+            data.forEach(sp => {
+                sel.innerHTML += `<option value="${sp.id}">${sp.name}</option>`;
+            });
+            toggleSpecialtySelect();
+            document.getElementById('modal-staff').classList.add('active');
+            document.getElementById('staff-modal-title').innerText = 'Thêm Tài Khoản Mới';
+        });
+}
+
+let currentStaffId = null;
+
+function editStaff(staffId) {
+    const staff = window.adminDataCache['staff'][staffId];
+    currentStaffId = staff.id;
+    
+    // Load specialties first
+    fetch('/api/admin/specialties')
+        .then(res => res.json())
+        .then(data => {
+            const sel = document.getElementById('staff-specialty');
+            sel.innerHTML = '<option value="">-- Không chọn --</option>';
+            data.forEach(sp => {
+                sel.innerHTML += `<option value="${sp.id}">${sp.name}</option>`;
+            });
+            
+            document.getElementById('staff-id').value = staff.id;
+            document.getElementById('staff-username').value = staff.username;
+            document.getElementById('staff-username').disabled = true; // Không cho sửa username
+            document.getElementById('staff-fullname').value = staff.full_name;
+            document.getElementById('staff-password-group').style.display = 'none'; // Ẩn đổi pass ở form này (cần thì làm endpoint riêng)
+            document.getElementById('staff-role').value = staff.role;
+            if(staff.specialty_id) document.getElementById('staff-specialty').value = staff.specialty_id;
+            
+            document.getElementById('staff-active-group').style.display = 'block';
+            document.getElementById('staff-active').value = staff.is_active ? 'true' : 'false';
+            
+            toggleSpecialtySelect();
+            document.getElementById('modal-staff').classList.add('active');
+            document.getElementById('staff-modal-title').innerText = 'Sửa Tài Khoản';
+        });
+}
+
+function closeStaffModal() {
+    document.getElementById('modal-staff').classList.remove('active');
+}
+
+function toggleSpecialtySelect() {
+    const role = document.getElementById('staff-role').value;
+    const specGroup = document.getElementById('staff-specialty-group');
+    if (role === 'doctor') {
+        specGroup.classList.remove('hidden');
+    } else {
+        specGroup.classList.add('hidden');
+    }
+}
+
+function saveStaff(e) {
+    e.preventDefault();
+    const id = document.getElementById('staff-id').value;
+    const url = id ? `/api/admin/staff/${id}` : '/api/admin/staff';
+    const method = id ? 'PUT' : 'POST';
+    
+    const data = {
+        username: document.getElementById('staff-username').value,
+        full_name: document.getElementById('staff-fullname').value,
+        role: document.getElementById('staff-role').value,
+    };
+    
+    if (!id) data.password = document.getElementById('staff-password').value;
+    
+    if (data.role === 'doctor') {
+        data.specialty_id = document.getElementById('staff-specialty').value;
+    }
+    
+    if (id) {
+        data.is_active = document.getElementById('staff-active').value === 'true';
+    }
+
+    fetch(url, {
+        method: method,
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.error) alert('Lỗi: ' + res.error);
+        else {
+            closeStaffModal();
+            loadAdminStaff();
+        }
+    });
+}
+
+function toggleStaffActive(id, isActive) {
+    if(!confirm(`Bạn chắc chắn muốn ${isActive ? 'mở khóa' : 'khóa'} tài khoản này?`)) return;
+    fetch(`/api/admin/staff/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ is_active: isActive })
+    })
+    .then(res => res.json())
+    .then(res => {
+        if(res.error) alert("Lỗi: " + res.error);
+        else loadAdminStaff();
+    });
+}
+
+// ════════════════════════════════════════════
+// SYSTEM ADMIN - KNOWLEDGE RAG
+// ════════════════════════════════════════════
+
+function loadAdminRag() {
+    fetch('/api/admin/knowledge_chunks')
+        .then(res => res.json())
+        .then(data => {
+            window.adminDataCache = window.adminDataCache || {};
+            window.adminDataCache['rag'] = {};
+            data.forEach(r => window.adminDataCache['rag'][r.id] = r);
+
+            const tbody = document.getElementById('rag-table-body');
+            tbody.innerHTML = '';
+            if (!data.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Chưa có tri thức nào</td></tr>';
+                return;
+            }
+            data.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${r.id}</td>
+                    <td><span class="badge badge-info">${r.source_type}</span></td>
+                    <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.chunk_text}</td>
+                    <td>${r.mapped_symptoms || '-'}</td>
+                    <td>
+                        <button class="btn btn-primary" style="padding:4px 8px; font-size:12px" onclick="editRag(${r.id})">Sửa</button>
+                        <button class="btn btn-danger" style="padding:4px 8px; font-size:12px" onclick="deleteRag(${r.id})">Xóa</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+}
+
+function openRagModal() {
+    document.getElementById('rag-id').value = '';
+    document.getElementById('rag-source-type').value = 'textbook';
+    document.getElementById('rag-source-id').value = '';
+    document.getElementById('rag-text').value = '';
+    document.getElementById('rag-mapped-symptoms').value = '';
+    document.getElementById('modal-rag').classList.add('active');
+    document.getElementById('rag-modal-title').innerText = 'Nạp Tri Thức Mới';
+    document.getElementById('rag-loading').classList.add('hidden');
+    document.getElementById('btn-save-rag').disabled = false;
+}
+
+let currentRagId = null;
+
+function editRag(ragId) {
+    const rag = window.adminDataCache['rag'][ragId];
+    currentRagId = rag.id;
+    document.getElementById('rag-id').value = rag.id;
+    document.getElementById('rag-source-type').value = rag.source_type;
+    document.getElementById('rag-source-id').value = rag.source_id || '';
+    document.getElementById('rag-text').value = rag.chunk_text;
+    document.getElementById('rag-mapped-symptoms').value = rag.mapped_symptoms || '';
+    document.getElementById('modal-rag').classList.add('active');
+    document.getElementById('rag-modal-title').innerText = 'Sửa Tri Thức RAG';
+    document.getElementById('rag-loading').classList.add('hidden');
+    document.getElementById('btn-save-rag').disabled = false;
+}
+
+function closeRagModal() {
+    document.getElementById('modal-rag').classList.remove('active');
+}
+
+function saveRag(e) {
+    e.preventDefault();
+    document.getElementById('rag-loading').classList.remove('hidden');
+    document.getElementById('btn-save-rag').disabled = true;
+
+    const id = document.getElementById('rag-id').value;
+    const url = id ? `/api/admin/knowledge_chunks/${id}` : '/api/admin/knowledge_chunks';
+    const method = id ? 'PUT' : 'POST';
+    
+    const data = {
+        source_type: document.getElementById('rag-source-type').value,
+        source_id: document.getElementById('rag-source-id').value || null,
+        chunk_text: document.getElementById('rag-text').value,
+        mapped_symptoms: document.getElementById('rag-mapped-symptoms').value || null
+    };
+
+    fetch(url, {
+        method: method,
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.error) {
+            alert('Lỗi: ' + res.error);
+            document.getElementById('rag-loading').classList.add('hidden');
+            document.getElementById('btn-save-rag').disabled = false;
+        } else {
+            closeRagModal();
+            loadAdminRag();
+        }
+    })
+    .catch(err => {
+        alert("Lỗi kết nối");
+        document.getElementById('rag-loading').classList.add('hidden');
+        document.getElementById('btn-save-rag').disabled = false;
+    });
+}
+
+function deleteRag(id) {
+    if(!confirm("Xóa vĩnh viễn đoạn tri thức RAG này khỏi cơ sở dữ liệu?")) return;
+    fetch(`/api/admin/knowledge_chunks/${id}`, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(res => {
+            if(res.error) alert(res.error);
+            else loadAdminRag();
+        });
+}
+
+// ════════════════════════════════════════════
+// SYSTEM ADMIN - CONFIGS
+// ════════════════════════════════════════════
+
+function loadAdminConfig() {
+    fetch('/api/admin/system_configs')
+        .then(res => res.json())
+        .then(data => {
+            data.forEach(conf => {
+                if(conf.config_key === 'confidence_threshold') document.getElementById('conf-threshold').value = parseFloat(conf.config_value);
+                if(conf.config_key === 'max_questions') document.getElementById('conf-max-questions').value = parseInt(conf.config_value);
+                if(conf.config_key === 'session_timeout') document.getElementById('conf-timeout').value = parseInt(conf.config_value);
+            });
+        });
+}
+
+function saveConfigs(e) {
+    e.preventDefault();
+    const data = {
+        confidence_threshold: document.getElementById('conf-threshold').value,
+        max_questions: document.getElementById('conf-max-questions').value,
+        session_timeout: document.getElementById('conf-timeout').value
+    };
+    
+    fetch('/api/admin/system_configs', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(res => {
+        if(res.error) alert("Lỗi: " + res.error);
+        else alert("Cấu hình đã được lưu!");
+    });
+}
+
+// ════════════════════════════════════════════
+// SYSTEM ADMIN - AI DEBUG LOGS
+// ════════════════════════════════════════════
+
+function loadAdminDebug() {
+    fetch('/api/admin/message_logs')
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.getElementById('debug-table-body');
+            tbody.innerHTML = '';
+            if (!data.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Không có log nào</td></tr>';
+                return;
+            }
+            data.forEach(log => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${log.id}</td>
+                    <td>${log.session_id}</td>
+                    <td><span class="badge ${log.sender_type === 'user' ? 'badge-primary' : 'badge-success'}">${log.sender_type}</span></td>
+                    <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${log.message_text}</td>
+                    <td>${formatDate(log.created_at)}</td>
+                    <td>
+                        <button class="btn btn-secondary" style="padding:4px 8px; font-size:12px" onclick='openJsonModal(${JSON.stringify(log.metadata)})'>Xem JSON</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+}
+
+function openJsonModal(jsonData) {
+    const pre = document.getElementById('json-viewer');
+    pre.textContent = JSON.stringify(jsonData, null, 2);
+    document.getElementById('modal-json').classList.remove('hidden');
+}
+
+function closeJsonModal() {
+    document.getElementById('modal-json').classList.add('hidden');
+}
+

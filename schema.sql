@@ -36,7 +36,6 @@ CREATE TABLE Symptoms (
     code VARCHAR(30) UNIQUE NOT NULL,
     name VARCHAR(150) NOT NULL,
     question_text VARCHAR(200),
-    is_red_flag BOOLEAN DEFAULT FALSE,
     embedding VECTOR(1024),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP

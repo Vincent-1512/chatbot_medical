@@ -186,22 +186,7 @@ class TriageEngine:
             })
         return formatted
 
-    # ─── Check Red Flags ───
-    def check_red_flags(self, symptom_ids: list):
-        if not symptom_ids:
-            return []
-        try:
-            conn = self._get_conn()
-            with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                cur.execute("SELECT id, name FROM Symptoms WHERE is_red_flag=true AND id=ANY(%s)", (symptom_ids,))
-                return cur.fetchall()
-        except Exception as e:
-            print(f"❌ Lỗi Red Flags: {e}")
-            try:
-                self._get_conn().rollback()
-            except Exception:
-                pass
-            return []
+
 
     # ==========================================
     # DATABASE HELPERS

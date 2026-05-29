@@ -15,7 +15,7 @@
 | 6 | Khởi tạo phiên tư vấn mới | Lưu trữ | BN_QĐ 6a | Nút "🚀 Bắt đầu tư vấn mới" nổi bật. Ngay khi bấm, màn hình hiện giao diện chat và tin nhắn chào mừng tự động từ AI. |
 | 7 | Nhập văn bản mô tả triệu chứng | Lưu trữ | BN_QĐ 6b | Ô nhập liệu (Chat input) nằm ở dưới cùng để bệnh nhân gõ tự do các cảm giác khó chịu. Có nút "Gửi" hoặc nhấn Enter. |
 | 8 | Trả lời câu hỏi xác nhận từ AI | Lưu trữ | BN_QĐ 6c | Hệ thống hiển thị các nút bấm phản hồi nhanh (Quick Replies) nằm ngang: [👍 Có], [👎 Không], [❔ Không rõ]. |
-| 9 | Xem kết quả sàng lọc & Cảnh báo | Tra cứu, Tính toán | BN_QĐ 7 | Hiển thị "Phiếu kết quả sàng lọc" (Chuyên khoa gợi ý, Lời khuyên). Nếu có dấu hiệu nguy hiểm (Red flag), hiển thị khung màu đỏ "🚨 CẢNH BÁO KHẨN CẤP" nổi bật. Ô nhập chat bị khóa (disable). |
+| 9 | Xem kết quả sàng lọc & Gợi ý chuyên khoa | Tra cứu, Tính toán | BN_QĐ 7 | Hiển thị "Phiếu kết quả sàng lọc" (Chuyên khoa gợi ý, Bệnh lý nghi ngờ, Lời khuyên chăm sóc). Ô nhập chat bị khóa (disable). |
 | 10 | Hủy phiên tư vấn hiện tại | Cập nhật | BN_QĐ 7b | Nút "❌ Huỷ phiên tư vấn hiện tại" nằm ngoài khung chat, cho phép ngắt ngang quá trình tư vấn nếu người dùng muốn dừng. |
 | **IV. Tra cứu lịch sử & Phản hồi** | | | | |
 | 11 | Tra cứu danh sách lịch sử tư vấn | Tra cứu | BN_QĐ 8 | Hiển thị danh sách tóm tắt các phiên khám (Ngày giờ, Trạng thái, Chuyên khoa). Có phân trang (hoặc cuộn dọc). Mỗi phiên có một thẻ có thể mở rộng (Expander). |
