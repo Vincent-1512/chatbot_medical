@@ -1235,7 +1235,7 @@ function openStaffModal() {
         .then(data => {
             const sel = document.getElementById('staff-specialty');
             sel.innerHTML = '<option value="">-- Không chọn --</option>';
-            data.forEach(sp => {
+            (data.specialties || []).forEach(sp => {
                 sel.innerHTML += `<option value="${sp.id}">${sp.name}</option>`;
             });
             toggleSpecialtySelect();
@@ -1256,7 +1256,7 @@ function editStaff(staffId) {
         .then(data => {
             const sel = document.getElementById('staff-specialty');
             sel.innerHTML = '<option value="">-- Không chọn --</option>';
-            data.forEach(sp => {
+            (data.specialties || []).forEach(sp => {
                 sel.innerHTML += `<option value="${sp.id}">${sp.name}</option>`;
             });
             

@@ -793,7 +793,7 @@ def get_staff():
             """)
             staff = cur.fetchall()
         conn.close()
-        return jsonify(staff)
+        return jsonify({"staff": staff})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
