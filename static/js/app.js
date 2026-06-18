@@ -314,6 +314,10 @@ async function sendChatMessage() {
             return;
         }
 
+        if (data.session_id) {
+            chatSessionId = data.session_id;
+        }
+
         data.messages.forEach(msg => {
             appendBotMessage(msg.text, msg.type, msg.options);
         });

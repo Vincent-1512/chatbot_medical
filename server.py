@@ -213,33 +213,24 @@ def get_current_user():
 def start_chat():
     patient_id = session.get('patient_id')
     if not patient_id:
-        # Cho phép khách (guest) dùng chatbot
-        patient_id = None
-
-    # Tạo session trong DB
-    if patient_id:
-        session_id = engine.create_chat_session(patient_id, "")
-    else:
         # Guest mode: tạo patient tạm
         guest_id = engine.get_or_create_patient("GUEST_TEMP", "Khách", None, None, None)
-        session_id = engine.create_chat_session(guest_id, "")
         patient_id = guest_id
 
-    if not session_id:
-        return jsonify({"error": "Không thể tạo phiên chat"}), 500
+    # Tạo một temporary session ID dạng chuỗi (không lưu vào DB ngay lập tức)
+    import time
+    temp_session_id = f"temp_{patient_id}_{int(time.time() * 1000)}"
 
-    # Tạo ChatbotSession
-    chat = ChatbotSession(engine, extractor, session_id, patient_id)
-    active_chats[session_id] = chat
+    # Tạo ChatbotSession với temp_session_id
+    chat = ChatbotSession(engine, extractor, temp_session_id, patient_id)
+    active_chats[temp_session_id] = chat
 
     greeting = chat.get_greeting()
 
-    # Log greeting
-    for msg in greeting:
-        engine.log_message(session_id, "bot", msg['text'])
+    # KHÔNG log greeting vào DB ở đây để tránh tạo phiên rác khi refresh/chưa nhắn gì
 
     return jsonify({
-        "session_id": session_id,
+        "session_id": temp_session_id,
         "messages": greeting,
         "status": chat.phase,
     })
@@ -258,6 +249,27 @@ def send_message():
     if not chat:
         return jsonify({"error": "Phiên chat không tồn tại hoặc đã hết hạn"}), 404
 
+    # Nếu đây là temporary session (chưa có trong DB), tiến hành tạo session thực tế
+    if isinstance(session_id, str) and session_id.startswith("temp_"):
+        patient_id = chat.patient_id
+        # Tạo session thực tế trong DB với tin nhắn đầu tiên của người bệnh làm complaint
+        real_session_id = engine.create_chat_session(patient_id, message)
+        if not real_session_id:
+            return jsonify({"error": "Không thể tạo phiên chat"}), 500
+
+        # Cập nhật ID cho đối tượng chat
+        chat.session_id = real_session_id
+
+        # Lưu chuyển vị trữ trong active_chats
+        active_chats[real_session_id] = chat
+        if session_id in active_chats:
+            del active_chats[session_id]
+
+        session_id = real_session_id
+
+        # Lưu tin nhắn chào mừng (greeting) của bot vào DB trước
+        engine.log_message(real_session_id, "bot", chat.GREETING_MESSAGE)
+
     # Xử lý tin nhắn
     responses = chat.process_message(message)
 
@@ -269,6 +281,7 @@ def send_message():
         "messages": responses,
         "status": chat.phase,
         "state": chat.to_dict(),
+        "session_id": session_id
     })
 
 
