@@ -6,3 +6,9 @@ vihealthqa_raw.csv
 knowledge_chunks.csv
 symptom_mapping.csv
 .DS_Store
+
+# Temporary and local workspace files
+~$*.docx
+*.code-workspace
+scratch/
+test_edit.py

@@ -24,12 +24,13 @@ def load_all_data():
     print("💡 Đang tải Model ngôn ngữ (BAAI/bge-m3)...")
     model = SentenceTransformer('BAAI/bge-m3')
 
-    print("🚀 Bắt đầu đọc dữ liệu từ thư mục 'data/'...")
-    df_dataset = pd.read_csv('data/dataset.csv')
-    df_sym_map = pd.read_csv('data/symptom_mapping.csv')
-    df_dis_map = pd.read_csv('data/disease_mapping.csv')
-    df_severity = pd.read_csv('data/Symptom-severity.csv')
-    df_precaution = pd.read_csv('data/symptom_precaution_vn.csv')
+    print("🚀 Bắt đầu đọc dữ liệu từ thư mục '../data/'...")
+    data_dir = os.path.join(os.path.dirname(__file__), '../data')
+    df_dataset = pd.read_csv(os.path.join(data_dir, 'dataset.csv'))
+    df_sym_map = pd.read_csv(os.path.join(data_dir, 'symptom_mapping.csv'))
+    df_dis_map = pd.read_csv(os.path.join(data_dir, 'disease_mapping.csv'))
+    df_severity = pd.read_csv(os.path.join(data_dir, 'Symptom-severity.csv'))
+    df_precaution = pd.read_csv(os.path.join(data_dir, 'symptom_precaution_vn.csv'))
 
     # Làm sạch dữ liệu
     df_severity['Symptom'] = df_severity['Symptom'].str.strip()
@@ -56,13 +57,11 @@ def load_all_data():
         eng_name = str(row['English_Name']).strip()
         vn_name = str(row['Vietnamese_Name']).strip()
         sev_row = df_severity[df_severity['Symptom'] == eng_name]
-        # Ngưỡng cờ đỏ: Các triệu chứng có điểm nguy hiểm từ 6 trở lên (thang 1-7)
-        is_red = int(sev_row['weight'].values[0]) >= 4 if not sev_row.empty else False
         embedding = embeddings[i].tolist()
-        sym_data.append((eng_name.upper(), vn_name, f"Bạn có bị {vn_name.lower()} không?", is_red, embedding))
+        sym_data.append((eng_name.upper(), vn_name, f"Bạn có bị {vn_name.lower()} không?", embedding))
 
     execute_values(cur, """
-        INSERT INTO Symptoms (code, name, question_text, is_red_flag, embedding) 
+        INSERT INTO Symptoms (code, name, question_text, embedding) 
         VALUES %s
     """, sym_data)
 

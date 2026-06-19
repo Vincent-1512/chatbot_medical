@@ -20,21 +20,27 @@ class EmbeddingIngestor:
         print("✅ Đã load mô hình embedding!")
 
     def ingest_symptoms(self):
-        """Tạo embedding cho tất cả triệu chứng"""
+        """Tạo embedding cho tất cả triệu chứng (bao gồm cả từ đồng nghĩa)"""
         print("\nĐang ingest embedding cho bảng Symptoms...")
         
+        # Reset embedding để nạp lại với synonyms
         with self.conn.cursor() as cur:
-            cur.execute("SELECT id, name, question_text FROM Symptoms WHERE embedding IS NULL")
+            cur.execute("UPDATE Symptoms SET embedding = NULL")
+            self.conn.commit()
+
+            cur.execute("SELECT id, name, question_text FROM Symptoms")
             symptoms = cur.fetchall()
             
-            if not symptoms:
-                print("✅ Tất cả triệu chứng đã có embedding!")
-                return
-            
-            print(f"Tìm thấy {len(symptoms)} triệu chứng cần ingest...")
+            print(f"Tìm thấy {len(symptoms)} triệu chứng cần cập nhật embedding...")
             
             for symptom_id, name, question_text in symptoms:
-                text_to_embed = f"{name}. {question_text or ''}".strip()
+                # Lấy tất cả synonyms cho symptom này
+                cur.execute("SELECT synonym FROM Symptom_Synonyms WHERE symptom_id = %s", (symptom_id,))
+                synonyms = [row[0] for row in cur.fetchall()]
+                synonyms_text = ", ".join(synonyms)
+                
+                # Kết hợp: Tên chính + Các từ đồng nghĩa + Câu hỏi mẫu
+                text_to_embed = f"{name}. {synonyms_text}. {question_text or ''}".strip()
                 embedding = self.model.encode(text_to_embed, normalize_embeddings=True)
                 
                 cur.execute(
@@ -42,7 +48,7 @@ class EmbeddingIngestor:
                     (embedding.tolist(), symptom_id)
                 )
                 self.conn.commit()
-                print(f"  ✓ Đã embed triệu chứng ID {symptom_id}: {name[:60]}...")
+                print(f"  ✓ Đã embed triệu chứng ID {symptom_id} (+ {len(synonyms)} synonyms): {name[:40]}...")
         
         print("✅ Hoàn thành ingest Symptoms!")
 

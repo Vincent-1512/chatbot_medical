@@ -6,3 +6,6 @@ sentence-transformers
 pgvector
 python-dotenv
 datasets
+flask
+flask-cors
+bcrypt
