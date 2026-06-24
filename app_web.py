@@ -45,6 +45,10 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
         border: 1px solid #E9ECEF;
         margin-bottom: 20px;
+        color: #1a1a1a !important;
+    }
+    .glass-card h4, .glass-card p, .glass-card strong, .glass-card div {
+        color: #1a1a1a !important;
     }
     .emergency-card {
         background: #FFF5F5;
@@ -53,7 +57,10 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgba(220, 53, 69, 0.05);
         border: 1px solid #FEB2B2;
         margin-bottom: 20px;
-        color: #C53030;
+        color: #C53030 !important;
+    }
+    .emergency-card h4, .emergency-card p, .emergency-card strong, .emergency-card div {
+        color: #C53030 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -103,6 +110,97 @@ sys_configs = fetch_system_configs()
 confidence_threshold = float(sys_configs.get("confidence_threshold", "0.55"))
 welcome_msg = sys_configs.get("chatbot_welcome_message",
     "Xin chào! Tôi là Trợ lý Y tế AI. Hãy mô tả triệu chứng của bạn để tôi hỗ trợ.")
+
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  HELPER FUNCTIONS (defined at module level for Streamlit)    ║
+# ╚══════════════════════════════════════════════════════════════╝
+def _find_next_followup(disease_id: int, already_asked: list) -> int | None:
+    """Tìm triệu chứng tiếp theo cần hỏi xác nhận dựa trên bệnh lý nghi ngờ hàng đầu."""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        if already_asked:
+            cur.execute("""
+                SELECT kr.symptom_id FROM Knowledge_Rules kr
+                WHERE kr.disease_id = %s AND NOT (kr.symptom_id = ANY(%s))
+                ORDER BY kr.weight DESC LIMIT 1;
+            """, (disease_id, already_asked))
+        else:
+            cur.execute("""
+                SELECT kr.symptom_id FROM Knowledge_Rules kr
+                WHERE kr.disease_id = %s
+                ORDER BY kr.weight DESC LIMIT 1;
+            """, (disease_id,))
+        row = cur.fetchone()
+        conn.close()
+        return row['symptom_id'] if row else None
+    except Exception:
+        return None
+
+
+def _run_diagnose_and_followup():
+    import streamlit as st
+    results = engine.diagnose(st.session_state.extracted_syms)
+    if results:
+        top = results[0]
+        next_sym_id = _find_next_followup(top["disease_id"], st.session_state.asked_syms)
+        if next_sym_id and len(st.session_state.chat_history) < 12:
+            st.session_state.followup_symptom_id = next_sym_id
+        else:
+            _finalize_screening(top, results)
+    else:
+        reply = "Thuật toán suy diễn chưa xác định được bệnh lý phù hợp. Bạn vui lòng tới quầy lễ tân để y tá phân luồng trực tiếp."
+        st.session_state.chat_history.append({"role": "assistant", "content": reply})
+        engine.log_message(st.session_state.active_session_id, "assistant", reply)
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            cur.execute("UPDATE Chat_Sessions SET status=%s, end_time=NOW() WHERE id=%s", ("completed", st.session_state.active_session_id))
+        conn.commit()
+        conn.close()
+        st.session_state.session_finished = True
+
+def _finalize_screening(top: dict, results: list):
+    """Kết luận phiên sàng lọc và lưu kết quả vào DB."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT description FROM Diseases WHERE id = %s", (top['disease_id'],))
+    desc_res = cur.fetchone()
+    conn.close()
+
+    advices = desc_res[0] if desc_res and desc_res[0] else "Chưa có lời khuyên cụ thể."
+    urgency = "emergency" if top['rule_score'] > 1.2 else "routine"
+    urgency_label = "Khẩn cấp" if urgency == "emergency" else "Bình thường"
+
+    result_text = f"""### 📋 Kết quả Sàng lọc AI
+👉 **Chuyên khoa đề xuất:** **{top['specialty_name']}**
+💡 **Chẩn đoán sơ bộ:** {top['disease_name']}
+⚠️ **Mức độ ưu tiên khám:** {urgency_label}
+
+💡 **Lời khuyên chăm sóc ban đầu:**
+{advices}"""
+
+    st.session_state.chat_history.append({"role": "assistant", "content": result_text})
+    engine.log_message(st.session_state.active_session_id, "assistant", result_text)
+
+    # Chuẩn bị disease_scores với rank
+    scored_results = []
+    for rank_idx, r in enumerate(results[:5], start=1):
+        scored_results.append({
+            "disease_id": r['disease_id'],
+            "rule_score": r['rule_score'],
+            "rank": rank_idx
+        })
+
+    engine.save_screening_result(
+        st.session_state.active_session_id,
+        suggested_specialty_id=top['specialty_id'],
+        triage_urgency=urgency,
+        recommendation_text=result_text,
+        disease_scores=scored_results
+    )
+    st.session_state.session_finished = True
+
+
 
 # --- PHÂN QUYỀN VAI TRÒ ---
 with st.sidebar:
@@ -184,6 +282,8 @@ if role == "👤 Bệnh nhân":
             st.session_state.chat_history = []
         if "extracted_syms" not in st.session_state:
             st.session_state.extracted_syms = []
+        if "asked_syms" not in st.session_state:
+            st.session_state.asked_syms = []
         if "followup_symptom_id" not in st.session_state:
             st.session_state.followup_symptom_id = None
         if "session_finished" not in st.session_state:
@@ -205,6 +305,7 @@ if role == "👤 Bệnh nhân":
                 st.session_state.active_session_id = session_id
                 st.session_state.chat_history = [{"role": "assistant", "content": welcome_msg}]
                 st.session_state.extracted_syms = []
+                st.session_state.asked_syms = []
                 st.session_state.followup_symptom_id = None
                 st.session_state.session_finished = False
                 engine.log_message(session_id, "assistant", welcome_msg)
@@ -224,6 +325,7 @@ if role == "👤 Bệnh nhân":
                     st.session_state.active_session_id = None
                     st.session_state.chat_history = []
                     st.session_state.extracted_syms = []
+                    st.session_state.asked_syms = []
                     st.session_state.followup_symptom_id = None
                     st.session_state.session_finished = False
                     st.rerun()
@@ -255,7 +357,10 @@ if role == "👤 Bệnh nhân":
                         st.session_state.chat_history.append({"role": "user", "content": "Có"})
                         st.session_state.chat_history.append({"role": "assistant", "content": f"✅ Ghi nhận: {sym_row['name']}"})
                         st.session_state.extracted_syms.append(st.session_state.followup_symptom_id)
+                        if st.session_state.followup_symptom_id not in st.session_state.asked_syms:
+                            st.session_state.asked_syms.append(st.session_state.followup_symptom_id)
                         st.session_state.followup_symptom_id = None
+                        _run_diagnose_and_followup()
                         st.rerun()
 
                 with col_no:
@@ -266,14 +371,20 @@ if role == "👤 Bệnh nhân":
                             source="confirmation")
                         engine.log_message(st.session_state.active_session_id, "user", "Không")
                         st.session_state.chat_history.append({"role": "user", "content": "Không"})
+                        if st.session_state.followup_symptom_id not in st.session_state.asked_syms:
+                            st.session_state.asked_syms.append(st.session_state.followup_symptom_id)
                         st.session_state.followup_symptom_id = None
+                        _run_diagnose_and_followup()
                         st.rerun()
 
                 with col_skip:
                     if st.button("❔ Không rõ", use_container_width=True, key="btn_skip"):
                         engine.log_message(st.session_state.active_session_id, "user", "Không rõ")
                         st.session_state.chat_history.append({"role": "user", "content": "Không rõ"})
+                        if st.session_state.followup_symptom_id not in st.session_state.asked_syms:
+                            st.session_state.asked_syms.append(st.session_state.followup_symptom_id)
                         st.session_state.followup_symptom_id = None
+                        _run_diagnose_and_followup()
                         st.rerun()
 
             # Nếu đang chờ người dùng nhập tin nhắn tự do
@@ -304,36 +415,11 @@ if role == "👤 Bệnh nhân":
                         for s in extracted:
                             if s['id'] not in st.session_state.extracted_syms:
                                 st.session_state.extracted_syms.append(s['id'])
+                            if s['id'] not in st.session_state.asked_syms:
+                                st.session_state.asked_syms.append(s['id'])
 
-                        # Chạy suy diễn
-                        results = engine.diagnose(st.session_state.extracted_syms)
-
-                        if results:
-                            top = results[0]
-
-                            # Tìm triệu chứng follow-up liên quan đến bệnh hàng đầu
-                            next_sym_id = _find_next_followup(top['disease_id'], st.session_state.extracted_syms)
-
-                            if next_sym_id and len(st.session_state.chat_history) < 12:
-                                st.session_state.followup_symptom_id = next_sym_id
-                                st.rerun()
-                            else:
-                                # Đủ thông tin → kết luận
-                                _finalize_screening(top, results)
-                                st.rerun()
-                        else:
-                            reply = "Thuật toán suy diễn chưa xác định được bệnh lý phù hợp. Bạn vui lòng tới quầy lễ tân để y tá phân luồng trực tiếp."
-                            st.session_state.chat_history.append({"role": "assistant", "content": reply})
-                            engine.log_message(st.session_state.active_session_id, "assistant", reply)
-                            # Đánh dấu abandoned
-                            conn = get_db_connection()
-                            with conn.cursor() as cur:
-                                cur.execute("UPDATE Chat_Sessions SET status='completed', end_time=NOW() WHERE id=%s",
-                                            (st.session_state.active_session_id,))
-                            conn.commit()
-                            conn.close()
-                            st.session_state.session_finished = True
-                            st.rerun()
+                        _run_diagnose_and_followup()
+                        st.rerun()
 
             # Nút hủy phiên (chỉ hiện khi phiên chưa kết thúc)
             if st.session_state.active_session_id and not st.session_state.session_finished:
@@ -347,6 +433,7 @@ if role == "👤 Bệnh nhân":
                     st.session_state.active_session_id = None
                     st.session_state.chat_history = []
                     st.session_state.extracted_syms = []
+                    st.session_state.asked_syms = []
                     st.session_state.followup_symptom_id = None
                     st.session_state.session_finished = False
                     st.rerun()
@@ -396,75 +483,6 @@ if role == "👤 Bệnh nhân":
                     for idx_m, m in enumerate(msgs):
                         label = "👤 Bệnh nhân" if m['sender_type'] == 'user' else "🤖 AI"
                         st.markdown(f"**{label}:** {m['message_text']}")
-
-
-# ╔══════════════════════════════════════════════════════════════╗
-# ║  HELPER FUNCTIONS (defined at module level for Streamlit)    ║
-# ╚══════════════════════════════════════════════════════════════╝
-def _find_next_followup(disease_id: int, already_asked: list) -> int | None:
-    """Tìm triệu chứng tiếp theo cần hỏi xác nhận dựa trên bệnh lý nghi ngờ hàng đầu."""
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        if already_asked:
-            cur.execute("""
-                SELECT kr.symptom_id FROM Knowledge_Rules kr
-                WHERE kr.disease_id = %s AND NOT (kr.symptom_id = ANY(%s))
-                ORDER BY kr.weight DESC LIMIT 1;
-            """, (disease_id, already_asked))
-        else:
-            cur.execute("""
-                SELECT kr.symptom_id FROM Knowledge_Rules kr
-                WHERE kr.disease_id = %s
-                ORDER BY kr.weight DESC LIMIT 1;
-            """, (disease_id,))
-        row = cur.fetchone()
-        conn.close()
-        return row['symptom_id'] if row else None
-    except Exception:
-        return None
-
-
-def _finalize_screening(top: dict, results: list):
-    """Kết luận phiên sàng lọc và lưu kết quả vào DB."""
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT description FROM Diseases WHERE id = %s", (top['disease_id'],))
-    desc_res = cur.fetchone()
-    conn.close()
-
-    advices = desc_res[0] if desc_res and desc_res[0] else "Chưa có lời khuyên cụ thể."
-    urgency = "emergency" if top['rule_score'] > 1.2 else "routine"
-    urgency_label = "Khẩn cấp" if urgency == "emergency" else "Bình thường"
-
-    result_text = f"""### 📋 Kết quả Sàng lọc AI
-👉 **Chuyên khoa đề xuất:** **{top['specialty_name']}**
-💡 **Chẩn đoán sơ bộ:** {top['disease_name']}
-⚠️ **Mức độ ưu tiên khám:** {urgency_label}
-
-💡 **Lời khuyên chăm sóc ban đầu:**
-{advices}"""
-
-    st.session_state.chat_history.append({"role": "assistant", "content": result_text})
-    engine.log_message(st.session_state.active_session_id, "assistant", result_text)
-
-    # Chuẩn bị disease_scores với rank
-    scored_results = []
-    for rank_idx, r in enumerate(results[:5], start=1):
-        scored_results.append({
-            "disease_id": r['disease_id'],
-            "rule_score": r['rule_score'],
-            "rank": rank_idx
-        })
-
-    engine.save_screening_result(
-        st.session_state.active_session_id,
-        suggested_specialty_id=top['specialty_id'],
-        triage_urgency=urgency,
-        recommendation_text=result_text,
-        disease_scores=scored_results
-    )
-    st.session_state.session_finished = True
 
 
 # ╔══════════════════════════════════════════════════════════════╗
@@ -727,13 +745,13 @@ elif role == "🧠 Chuyên viên Tri thức":
         with tab_spec:
             conn = get_db_connection()
             st.subheader("🏥 Danh sách Chuyên khoa")
-            df_spec = pd.read_sql("SELECT id, code, name, description FROM Specialties ORDER BY id", conn)
+            df_spec = pd.read_sql("SELECT id, code, name, description FROM Specialties ORDER BY id ASC", conn)
             st.dataframe(df_spec, use_container_width=True, hide_index=True)
 
             st.subheader("🦠 Danh sách Bệnh lý")
             df_diseases = pd.read_sql("""
                 SELECT d.id, d.icd_code, d.name AS disease_name, s.name AS specialty_name, d.description
-                FROM Diseases d JOIN Specialties s ON d.specialty_id = s.id ORDER BY d.id
+                FROM Diseases d JOIN Specialties s ON d.specialty_id = s.id ORDER BY d.id ASC
             """, conn)
             st.dataframe(df_diseases, use_container_width=True, hide_index=True)
 
@@ -783,7 +801,7 @@ elif role == "🧠 Chuyên viên Tri thức":
 
             st.subheader("🔍 Tra cứu triệu chứng")
             conn = get_db_connection()
-            df_sym = pd.read_sql("SELECT id, code, name, question_text FROM Symptoms ORDER BY id DESC LIMIT 50", conn)
+            df_sym = pd.read_sql("SELECT id, code, name, question_text FROM Symptoms ORDER BY id ASC", conn)
             st.dataframe(df_sym, use_container_width=True, hide_index=True)
             conn.close()
 
@@ -831,11 +849,11 @@ elif role == "🧠 Chuyên viên Tri thức":
                     sym_ids = [s['id'] for s in sand_ext]
                     st.write("**Bước 2: Red Flag (Đã vô hiệu hóa)**")
                     results = engine.diagnose(sym_ids)
-                        st.write("**Bước 3: Suy diễn:**")
-                        if results:
-                            st.dataframe(pd.DataFrame(results)[['disease_name','specialty_name','rule_score']], hide_index=True)
-                        else:
-                            st.warning("Không có bệnh lý khớp.")
+                    st.write("**Bước 3: Suy diễn:**")
+                    if results:
+                        st.dataframe(pd.DataFrame(results)[['disease_name','specialty_name','rule_score']], hide_index=True)
+                    else:
+                        st.warning("Không có bệnh lý khớp.")
                 else:
                     st.warning("Không nhận diện được triệu chứng.")
 

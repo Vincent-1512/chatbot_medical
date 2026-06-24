@@ -492,7 +492,7 @@ def list_specialties():
     try:
         conn = get_db()
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("SELECT id, code, name, description FROM Specialties ORDER BY name")
+            cur.execute("SELECT id, code, name, description FROM Specialties ORDER BY id ASC")
             rows = cur.fetchall()
         conn.close()
         return jsonify({"specialties": [dict(r) for r in rows]})
@@ -539,7 +539,7 @@ def list_symptoms():
     try:
         conn = get_db()
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("SELECT id, code, name, question_text FROM Symptoms ORDER BY name")
+            cur.execute("SELECT id, code, name, question_text FROM Symptoms ORDER BY id ASC")
             rows = cur.fetchall()
         conn.close()
         return jsonify({"symptoms": [dict(r) for r in rows]})
@@ -593,7 +593,7 @@ def list_diseases():
                 SELECT d.id, d.icd_code, d.name, d.description,
                        s.name AS specialty_name, d.specialty_id
                 FROM Diseases d JOIN Specialties s ON d.specialty_id=s.id
-                ORDER BY d.name
+                ORDER BY d.id ASC
             """)
             rows = cur.fetchall()
         conn.close()
