@@ -40,7 +40,7 @@
 
         <!-- Doctor nav -->
         <div class="nav-user hidden" id="nav-doctor">
-            <button class="nav-links" style="background:none;" onclick="showPage('doctor-queue')">📋 Lịch sử ca khám</button>
+            <button class="nav-links" style="background:none;" onclick="showPage('doctor-queue')">📋 Chờ xét duyệt</button>
             <div class="user-avatar" id="doc-avatar">BS</div>
             <span class="user-name" id="doc-name-display"></span>
             <button class="btn-logout" onclick="doLogout()">Đăng xuất</button>
@@ -354,7 +354,7 @@
      ════════════════════════════════════════ -->
 <div id="page-doctor-queue" class="dashboard container hidden">
     <div class="dashboard-header">
-        <h1>🩺 Lịch sử ca khám</h1>
+        <h1>🩺 Chờ xét duyệt</h1>
         <p>Lịch sử các ca tư vấn thuộc chuyên khoa của bạn</p>
     </div>
     <div class="card">
@@ -719,7 +719,7 @@
                     <label>Map Triệu chứng (Tùy chọn)</label>
                     <input type="text" id="rag-mapped-symptoms" placeholder="Ví dụ: Đau đầu, Sốt">
                 </div>
-                
+
                 <div id="rag-loading" class="hidden" style="margin-bottom:15px; color:var(--primary); font-weight:600; text-align:center;">
                     Đang nhúng văn bản (Embedding) bằng AI... Vui lòng đợi <span class="loading-spinner"></span>
                 </div>
