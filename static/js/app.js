@@ -66,20 +66,21 @@ function updateNavForUser(user) {
     document.getElementById('nav-doctor').classList.add('hidden');
     document.getElementById('nav-admin').classList.add('hidden');
 
-    const initial = (user.user_name || '?')[0].toUpperCase();
+    const displayName = user.user_name || user.name || '';
+    const initial = (displayName || '?')[0].toUpperCase();
 
     if (user.user_type === 'patient') {
         document.getElementById('nav-user').classList.remove('hidden');
         document.getElementById('user-avatar').textContent = initial;
-        document.getElementById('user-name-display').textContent = user.user_name;
+        document.getElementById('user-name-display').textContent = displayName;
     } else if (user.user_type === 'doctor') {
         document.getElementById('nav-doctor').classList.remove('hidden');
         document.getElementById('doc-avatar').textContent = initial;
-        document.getElementById('doc-name-display').textContent = user.user_name;
+        document.getElementById('doc-name-display').textContent = displayName;
     } else if (user.user_type === 'admin' || user.user_type === 'knowledge_admin') {
         document.getElementById('nav-admin').classList.remove('hidden');
         document.getElementById('admin-avatar').textContent = initial;
-        document.getElementById('admin-name-display').textContent = user.user_name;
+        document.getElementById('admin-name-display').textContent = displayName;
     }
 }
 
