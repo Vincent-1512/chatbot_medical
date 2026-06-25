@@ -27,6 +27,7 @@ db-down:
 
 data:
 	python3 scripts/final_data_loader.py
+	python3 scripts/create_default_users.py
 
 install:
 	pip install -r requirements.txt

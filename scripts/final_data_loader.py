@@ -43,9 +43,23 @@ def load_all_data():
 
     # 1. Nạp Chuyên Khoa
     print("🏥 Đang nạp danh mục Chuyên khoa...")
+    specialty_vn_map = {
+        "DERMA": "Da liễu",
+        "IMMUNO": "Miễn dịch - Dị ứng",
+        "GASTRO": "Tiêu hóa",
+        "HEPAT": "Gan mật",
+        "INFECT": "Truyền nhiễm",
+        "ENDOC": "Nội tiết",
+        "RESP": "Hô hấp",
+        "CARDIO": "Tim mạch",
+        "NEURO": "Thần kinh",
+        "ORTHO": "Cơ xương khớp",
+        "UROLO": "Tiết niệu"
+    }
     specialties = df_dis_map['Specialty_Code'].dropna().unique()
     for spec in specialties:
-        cur.execute("INSERT INTO Specialties (code, name) VALUES (%s, %s)", (spec, f"Khoa {spec}"))
+        vn_name = specialty_vn_map.get(spec, spec)
+        cur.execute("INSERT INTO Specialties (code, name) VALUES (%s, %s)", (spec, f"Khoa {vn_name}"))
 
     # 2. Nạp Triệu Chứng (Kèm Embedding & Red Flag)
     print("🤒 Đang tạo Vector và nạp triệu chứng (có thể mất 1-2 phút)...")
